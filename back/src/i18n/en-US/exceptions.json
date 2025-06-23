@@ -1,0 +1,22 @@
+{
+  "messages": {
+    "PAGE_NOT_FOUND": "Page not found",
+    "JWT_TOKEN_INVALID": "Token is invalid",
+    "JWT_TOKEN_EXPIRED": "Token expired",
+    "AUTHORIZATION_INVALID": "Authorization invalid",
+    "AUTHORIZATION_FAILED": "Authorization failed",
+    "DATABASE_EXECUTION": "Failed to execute {action} to the {database} database",
+    "DATABASE_VALIDATION": "Failed to validate datas ({path}) on the {database} database on executing {action}",
+    "DATA_NOT_FOUND": "{name} data not found",
+    "TOO_MANY_REQUESTS": "Too many requests. Try again later",
+    "INTERNAL_SERVER_ERROR": "Unknown internal server error occured",
+    "PARAMETERS_INVALID": "Parameters were invalidly provided",
+    "BAD_REQUEST": "Bad request. Check the parameters of request",
+    "AWS_SES_SEND_FAIL": "Email send failed. Try again. If it occurs repeatedly, please contact to admin.",
+    "DATA_ALREADY_EXISTS": "Data already exists"
+  },
+  "parameter_details": {
+    "data_null": "is not provided.",
+    "data_invalid": "is invalid."
+  }
+}
