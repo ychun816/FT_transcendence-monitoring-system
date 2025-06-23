@@ -1,0 +1,6 @@
+* Auth service rewrite
+* Session service (refresh token)
+* User-restrictions repo (ban ip/id)
+* User model (password hashing)
+* Passport (oauth2 - google) , local
+* Token generation
