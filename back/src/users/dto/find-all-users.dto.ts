@@ -1,0 +1,14 @@
+import { User } from '../user.entity';
+
+export class FindAllUsersDto {
+  query: Partial<{
+    email: string;
+    name: string;
+    nickname: string;
+  }>;
+  pagination: {
+    page: number;
+    count: number;
+  };
+  order: Record<keyof User, 'ASC' | 'DESC' | 'asc' | 'desc'>;
+}

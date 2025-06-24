@@ -18,6 +18,11 @@ export class User {
   @IsNotEmpty()
   name: string;
 
+  @Column({ type: 'string', unique: true })
+  @IsString()
+  @IsNotEmpty()
+  nickname: string;
+
   @Column({ type: 'array', enum: AuthorityEnum })
   @IsEnum(AuthorityEnum, { each: true })
   authority: AuthorityEnum[];

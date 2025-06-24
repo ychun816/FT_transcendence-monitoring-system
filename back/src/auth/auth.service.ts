@@ -1,40 +1,33 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { User, UserDocument } from 'src/users/user.schema';
+import { User } from 'src/users/user.entity';
 import { UsersService } from 'src/users/users.service';
 import { TokenPayloadEntity } from './entities/token-payload.entity';
 import jwt from 'jsonwebtoken';
 import { pbkdf2Sync, randomBytes } from 'crypto';
-import { SessionsService } from 'src/sessions/sessions.service';
 import ms, { StringValue } from 'ms';
 import { JwtTokenInvalidException } from 'src/errors/exceptions/jwt-token-invalid.exception';
 import { JwtTokenExpiredException } from 'src/errors/exceptions/jwt-token-expired.exception';
 import { AuthorizationFailedException } from 'src/errors/exceptions/authorization-failed.exception';
 import { TokenType } from './enum/token-type.enum';
-import { CookieOptions } from 'express';
-import { BannedException } from 'src/errors/exceptions/banned.exception';
-import { UserRestrictionsService } from 'src/user-restrictions/user-restrictions.service';
+import { CookieSerializeOptions } from '@fastify/cookie';
 
 @Injectable()
 export class AuthService {
   constructor(
     @Inject(forwardRef(() => UsersService)) private usersService: UsersService,
     private configService: ConfigService,
-    private sessionService: SessionsService,
-    private userRestrictionsService: UserRestrictionsService,
   ) {}
 
-  async createToken(
+  createToken(
     payload: Record<string, any>,
     type: TokenType,
     expiration: string | number | undefined = undefined,
-  ): Promise<string> {
+  ): string {
     const expireTime = ((): StringValue | number => {
       if (expiration) return expiration as StringValue | number;
       if (type === TokenType.ACCESS) {
         return this.configService.getOrThrow('ACCESS_TOKEN_EXPIRATION_TIME');
-      } else if (type === TokenType.REFRESH) {
-        return this.configService.getOrThrow('REFRESH_TOKEN_EXPIRATION_TIME');
       } else {
         return '1h';
       }
@@ -44,8 +37,6 @@ export class AuthService {
       switch (type) {
         case TokenType.ACCESS:
           return this.configService.getOrThrow('ACCESS_TOKEN_KEY');
-        case TokenType.REFRESH:
-          return this.configService.getOrThrow('REFRESH_TOKEN_KEY');
         default:
           return this.configService.getOrThrow('TOKEN_KEY');
       }
@@ -57,7 +48,7 @@ export class AuthService {
       issuer:
         this.configService.getOrThrow('NODE_ENV') === 'development'
           ? '*'
-          : this.configService.get('REQUEST_URI') || '*',
+          : this.configService.getOrThrow('REQUEST_URI'),
     };
 
     const result = jwt.sign(
@@ -69,32 +60,17 @@ export class AuthService {
       jwtSettings,
     );
 
-    if (type === TokenType.REFRESH) {
-      const jwtDecoded: any = jwt.decode(result);
-      if (!jwtDecoded.exp || !jwtDecoded.jti || !jwtDecoded.user) {
-        throw new JwtTokenInvalidException();
-      }
-      await this.sessionService.create({
-        expire: jwtDecoded.exp,
-        user: jwtDecoded.user,
-        jwtid: jwtDecoded.jti,
-      });
-    }
-
     return result;
   }
 
-  async createAuthToken(
-    user: UserDocument,
-    type: TokenType.ACCESS | TokenType.REFRESH,
-  ): Promise<string> {
+  createAuthToken(user: User): string {
     const tokenPayload: TokenPayloadEntity = {
-      user: user._id,
+      user: user.id,
       authority: user.authority,
-      type,
+      type: TokenType.ACCESS,
     };
 
-    const result = await this.createToken(tokenPayload, type);
+    const result = this.createToken(tokenPayload as Record<string, any>, type);
 
     return result;
   }
@@ -115,9 +91,6 @@ export class AuthService {
             case TokenType.ACCESS:
               tokenKey = this.configService.getOrThrow('ACCESS_TOKEN_KEY');
               break;
-            case TokenType.REFRESH:
-              tokenKey = this.configService.getOrThrow('REFRESH_TOKEN_KEY');
-              break;
             default:
               tokenKey = this.configService.getOrThrow('TOKEN_KEY');
               break;
@@ -131,20 +104,12 @@ export class AuthService {
         }
 
         return result as any;
-      } catch (err) {
-        if (err.name === 'TokenExpiredError') {
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'TokenExpiredError') {
           throw new JwtTokenExpiredException();
         }
       }
     })();
-
-    if (type === TokenType.REFRESH) {
-      try {
-        await this.sessionService.findByJwtId(tokenValue.jti);
-      } catch {
-        throw new JwtTokenInvalidException();
-      }
-    }
 
     if (!tokenValue?.type && tokenValue.type !== 0) {
       throw new JwtTokenInvalidException();
@@ -159,8 +124,8 @@ export class AuthService {
 
   createPassword(
     password: string,
-    customSalt: string = undefined,
-  ): { password: string; enckey: string } {
+    customSalt: string | undefined = undefined,
+  ): { pubkey: string; salt: string } {
     const buf: string = customSalt || randomBytes(64).toString('base64');
     const key: string = pbkdf2Sync(
       password,
@@ -170,70 +135,48 @@ export class AuthService {
       'sha512',
     ).toString('base64');
 
-    return { password: key, enckey: buf };
+    return { pubkey: key, salt: buf };
   }
 
-  verifyPassword(
-    password: string,
-    encryptedPassword: string,
-    enckey: string,
-  ): boolean {
+  verifyPassword(password: string, pubkey: string, keysalt: string): boolean {
     const key: string = pbkdf2Sync(
       password,
-      enckey,
+      keysalt,
       100000,
       64,
       'sha512',
     ).toString('base64');
 
-    return key === encryptedPassword;
+    return key === pubkey;
   }
 
-  async validateUser(
-    email: string,
-    password: string,
-  ): Promise<User & Document> {
-    const user = await this.usersService.findOneByEmail(email);
+  async validateUser(email: string, password: string): Promise<User> {
+    const user = await this.usersService.findByEmail(email);
 
     if (!user) {
       throw new AuthorizationFailedException();
     }
 
-    if (!this.verifyPassword(password, user.password, user.enckey)) {
+    if (!this.verifyPassword(password, user.pubkey, user.keysalt)) {
       throw new AuthorizationFailedException();
     }
-
-    try {
-      const userRestriction = await this.userRestrictionsService.findOneSelf(
-        user._id,
-        undefined,
-      );
-      throw new BannedException({ reason: userRestriction.reason });
-    } catch {}
 
     return user;
   }
 
-  async getCookieConfigTokenGenerationIntegrated(
-    user: UserDocument,
-    type: TokenType.ACCESS | TokenType.REFRESH,
-  ): Promise<[string, string | any, CookieOptions?]> {
-    const token = await this.createAuthToken(user, type);
+  getCookieConfigTokenGenerationIntegrated(
+    user: User,
+  ): [string, string, CookieSerializeOptions?] {
+    const token = this.createAuthToken(user);
 
     return [
-      type === TokenType.ACCESS ? `Authentication` : `RefreshToken`,
+      'Authorization',
       token,
       {
         httpOnly: true,
         path: '/',
         maxAge: parseInt(
-          ms(
-            this.configService.getOrThrow(
-              type === TokenType.ACCESS
-                ? 'ACCESS_TOKEN_EXPIRATION_TIME'
-                : 'REFRESH_TOKEN_EXPIRATION_TIME',
-            ),
-          ),
+          ms(this.configService.getOrThrow('ACCESS_TOKEN_EXPIRATION_TIME')),
         ),
       },
     ];

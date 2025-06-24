@@ -1,23 +1,32 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { DataSource, Repository } from 'typeorm';
+import { DataTypeNotSupportedError, Repository } from 'typeorm';
 import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { AuthService } from 'src/auth/auth.service';
+import { DataNotFoundException } from 'src/errors/exceptions/data-not-found.exception';
+import { FindAllUsersDto } from './dto/find-all-users.dto';
+import { UtilsService } from 'src/utils/utils.service';
 
 @Injectable()
 export class UsersService {
-  private readonly logger = new Logger('Users.Service');
+  private readonly logger = new Logger(UsersService.name);
 
   constructor(
     @InjectRepository(User) private readonly usersRepository: Repository<User>,
+    @Inject(AuthService) private readonly authService: AuthService,
+    @Inject(UtilsService) private readonly utilsService: UtilsService,
   ) {}
 
   async createOne(createUserDto: CreateUserDto): Promise<void> {
     const user = new User();
     user.email = createUserDto.email;
     user.name = createUserDto.name;
-    // TODO : password
+    const password = this.authService.createPassword(createUserDto.password);
+    user.pubkey = password.pubkey;
+    user.keysalt = password.salt;
+
     try {
       await this.usersRepository.save(user);
     } catch (err) {
@@ -27,37 +36,55 @@ export class UsersService {
   }
 
   async createMany(createUserDtos: CreateUserDto[]): Promise<void> {
-    // const queryRunner = this.dataSource.createQueryRunner();
-    // await queryRunner.connect();
-    // await queryRunner.startTransaction();
-    // try {
-    //   for (const user of createUserDtos) {
-    //     await queryRunner.manager.save(user);
-    //   }
-    // } catch (err: unknown) {
-    //   this.logger.debug(err);
-    //   await queryRunner.rollbackTransaction();
-    // } finally {
-    //   await queryRunner.release();
-    // }
+    for (const createUserDto of createUserDtos) {
+      await this.createOne(createUserDto);
+    }
   }
 
-  async findAll(): Promise<User[]> {
-    return [];
+  async findAll(findAllUsersDto: FindAllUsersDto): Promise<User[]> {
+    const users = await this.usersRepository.find(
+      this.utilsService.queryNullableFilter({
+        where: findAllUsersDto.query,
+        skip:
+          findAllUsersDto.pagination.count * findAllUsersDto.pagination.page,
+        take: findAllUsersDto.pagination.count,
+        order: findAllUsersDto.order,
+      }),
+    );
+
+    if (!users || users.length === 0) {
+      throw new DataNotFoundException({ name: 'users' });
+    }
+    return users;
   }
 
   async findOne(id: number): Promise<User> {
-    // return `This action returns a #${id} user`;
-    return (await this.usersRepository.findOne({
-      where: { id },
-    })) as any;
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) {
+      throw new DataNotFoundException({ name: 'user' });
+    }
+    return user;
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    const user = await this.usersRepository.findOneBy({ email });
+    if (!user) {
+      throw new DataNotFoundException({ name: 'user' });
+    }
+    return user;
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
-    // return `This action updates a #${id} user`;
+    const user = await this.usersRepository.update({ id }, updateUserDto);
+    if (!user) {
+      throw new DataNotFoundException({ name: 'user' });
+    }
   }
 
   async remove(id: number): Promise<void> {
-    // return `This action removes a #${id} user`;
+    const user = await this.usersRepository.softRemove({ id });
+    if (!user) {
+      throw new DataNotFoundException({ name: 'user' });
+    }
   }
 }

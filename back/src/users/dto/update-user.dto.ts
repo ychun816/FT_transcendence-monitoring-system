@@ -12,4 +12,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsStrongPassword()
   password?: string;
+
+  @IsOptional()
+  @IsString()
+  nickname?: string;
 }

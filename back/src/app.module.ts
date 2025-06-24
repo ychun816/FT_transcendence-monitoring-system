@@ -21,6 +21,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UtilsService } from './utils/utils.service';
 import { UtilsModule } from './utils/utils.module';
 import { AuthModule } from './auth/auth.module';
+import { GameHistoryModule } from './game-history/game-history.module';
+import { GameSessionModule } from './game-session/game-session.module';
 
 @Module({
   imports: [
@@ -36,8 +38,6 @@ import { AuthModule } from './auth/auth.module';
       //   REQUEST_URI: Joi.string().uri().required(),
       //   ACCESS_TOKEN_KEY: Joi.string().required(),
       //   ACCESS_TOKEN_EXPIRATION_TIME: Joi.string().required(),
-      //   REFRESH_TOKEN_KEY: Joi.string().required(),
-      //   REFRESH_TOKEN_EXPIRATION_TIME: Joi.string().required(),
       //   COOKIE_SECRET: Joi.string().required(),
       //   TOKEN_KEY: Joi.string(),
       //   THROTTLE_TTL: Joi.number().default(300),
@@ -66,8 +66,8 @@ import { AuthModule } from './auth/auth.module';
       useFactory: (config: ConfigService): ThrottlerModuleOptions => ({
         throttlers: [
           {
-            ttl: config.getOrThrow<number>('THROTTLE_TTL', 300),
-            limit: config.getOrThrow<number>('THROTTLE_LIMIT', 100),
+            ttl: config.getOrThrow<number>('THROTTLE_TTL', 60),
+            limit: config.getOrThrow<number>('THROTTLE_LIMIT', 300),
           },
         ],
       }),
@@ -92,6 +92,8 @@ import { AuthModule } from './auth/auth.module';
     UsersModule,
     UtilsModule,
     AuthModule,
+    GameHistoryModule,
+    GameSessionModule,
   ],
   controllers: [AppController],
   providers: [
