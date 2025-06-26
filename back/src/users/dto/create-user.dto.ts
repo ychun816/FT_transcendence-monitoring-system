@@ -3,10 +3,7 @@ import {
   IsNotEmpty,
   IsString,
   IsStrongPassword,
-  IsArray,
-  IsEnum,
 } from 'class-validator';
-import { AuthorityEnum } from '../enums/authority.enum';
 
 export class CreateUserDto {
   @IsEmail()

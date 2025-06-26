@@ -25,8 +25,8 @@ export class GameSessionGateway
 
   private readonly logger = new Logger(GameSessionGateway.name);
 
-  handleConnection(@ConnectedSocket() client: Socket) {
-    this.gameSessionService.handleConnection(client);
+  async handleConnection(@ConnectedSocket() client: Socket) {
+    await this.gameSessionService.handleConnection(client);
   }
 
   handleDisconnect(client: Socket) {

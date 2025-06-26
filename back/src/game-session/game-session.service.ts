@@ -11,6 +11,7 @@ import { User } from 'src/users/user.entity';
 import { HttpExceptionFactory } from 'src/errors/http-exception-factory.class';
 import { RegisterQueueDto } from './dto/register-queue.dto';
 import { UsersService } from 'src/users/users.service';
+import { RegisterQueueStatus } from './enum/register-queue-status.enum';
 
 @Injectable()
 export class GameSessionService {
@@ -58,7 +59,8 @@ export class GameSessionService {
 
     for (const userQueue of this.userQueue) {
       if (userQueue.user.id === user.id) {
-        throw new WsException('You are already registered in the queue');
+        client.emit('registerQueue', RegisterQueueStatus.ALREADY_REGISTERED);
+        return;
       }
     }
 
@@ -69,7 +71,7 @@ export class GameSessionService {
     };
 
     this.userQueue.push(newUserQueue);
-    client.emit('registerQueue', true);
+    client.emit('registerQueue', RegisterQueueStatus.REGISTERED);
   }
 
   unregisterQueue(client: Socket) {
@@ -80,10 +82,13 @@ export class GameSessionService {
     );
 
     if (index === -1) {
-      throw new WsException('You are not registered in the queue');
+      client.emit('registerQueue', RegisterQueueStatus.NOT_REGISTERED);
+      return;
     }
 
     this.userQueue.splice(index, 1);
+
+    client.emit('registerQueue', RegisterQueueStatus.UNREGISTERED);
   }
 
   create(createGameSessionDto: CreateGameSessionDto) {
