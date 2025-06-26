@@ -187,9 +187,6 @@ export class AuthService {
   }
 
   getCookieLogout(): string[] {
-    return [
-      `Authentication=; HttpOnly; Path=/; Max-Age=0`,
-      `RefreshToken=; HttpOnly; Path=/; Max-Age=0`,
-    ];
+    return [`Authentication=; HttpOnly; Path=/; Max-Age=0`];
   }
 }

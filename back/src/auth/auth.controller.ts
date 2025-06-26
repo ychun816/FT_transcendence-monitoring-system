@@ -23,7 +23,10 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 300 } })
   @Post('login')
-  login(@Req() req: RequestWithUser, @Res() res: FastifyReply) {
+  login(
+    @Req() req: RequestWithUser,
+    @Res({ passthrough: true }) res: FastifyReply,
+  ) {
     const { user } = req;
 
     res.setCookie(

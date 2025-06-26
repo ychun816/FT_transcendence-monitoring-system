@@ -11,8 +11,13 @@ import { CreateGameSessionDto } from './dto/create-game-session.dto';
 import { UpdateGameSessionDto } from './dto/update-game-session.dto';
 import { Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
+import { RegisterQueueDto } from './dto/register-queue.dto';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+  },
+})
 export class GameSessionGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
@@ -20,17 +25,21 @@ export class GameSessionGateway
 
   private readonly logger = new Logger(GameSessionGateway.name);
 
-  handleConnection(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: string,
-  ) {
-    this.gameSessionService.handleHandshake(client);
+  handleConnection(@ConnectedSocket() client: Socket) {
+    this.gameSessionService.handleConnection(client);
   }
 
-  handleDisconnect(client: any) {}
+  handleDisconnect(client: Socket) {
+    this.gameSessionService.handleDisconnect(client);
+  }
 
   @SubscribeMessage('registerQueue')
-  registerQueue(@MessageBody() registeQueueDto) {}
+  registerQueue(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() registerQueueDto: RegisterQueueDto,
+  ) {
+    this.gameSessionService.registerQueue(client, registerQueueDto);
+  }
 
   @SubscribeMessage('createGameSession')
   create(@MessageBody() createGameSessionDto: CreateGameSessionDto) {

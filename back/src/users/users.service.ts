@@ -1,13 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { DataTypeNotSupportedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthService } from 'src/auth/auth.service';
 import { DataNotFoundException } from 'src/errors/exceptions/data-not-found.exception';
 import { FindAllUsersDto } from './dto/find-all-users.dto';
 import { UtilsService } from 'src/utils/utils.service';
+import { AuthorityEnum } from './enums/authority.enum';
 
 @Injectable()
 export class UsersService {
@@ -23,6 +24,8 @@ export class UsersService {
     const user = new User();
     user.email = createUserDto.email;
     user.name = createUserDto.name;
+    user.nickname = createUserDto.nickname;
+    user.authority = [AuthorityEnum.NORMAL];
     const password = this.authService.createPassword(createUserDto.password);
     user.pubkey = password.pubkey;
     user.keysalt = password.salt;
