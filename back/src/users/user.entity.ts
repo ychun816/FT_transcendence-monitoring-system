@@ -4,36 +4,36 @@ import { AuthorityEnum } from './enums/authority.enum';
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn()
   @IsNotEmpty()
+  @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
   @IsEmail()
   @IsNotEmpty()
+  @Column({ unique: true })
   email: string;
 
-  @Column()
   @IsString()
   @IsNotEmpty()
+  @Column({ type: 'text' })
   name: string;
 
-  @Column({ type: 'string', unique: true })
   @IsString()
   @IsNotEmpty()
+  @Column({ type: 'text', unique: true })
   nickname: string;
 
-  @Column({ type: 'array', enum: AuthorityEnum })
   @IsEnum(AuthorityEnum, { each: true })
+  @Column({ type: 'text', enum: AuthorityEnum })
   authority: AuthorityEnum[];
 
-  @Column({ type: 'string' })
   @IsNotEmpty()
   @IsString()
+  @Column({ type: 'text' })
   pubkey: string;
 
-  @Column({ type: 'string' })
   @IsString()
   @IsNotEmpty()
+  @Column({ type: 'text' })
   keysalt: string;
 }

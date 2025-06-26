@@ -4,3 +4,5 @@
 * User model (password hashing)
 * Passport (oauth2 - google) , local
 * Token generation
+
+qcert password: password

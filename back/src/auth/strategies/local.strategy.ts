@@ -2,16 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
 import { AuthService } from '../auth.service';
-import { User } from 'src/users/user.schema';
-import { ActivationRequestsService } from 'src/activation-requests/activation-requests.service';
+import { User } from 'src/users/user.entity';
 import { UsersService } from 'src/users/users.service';
-import { Document } from 'mongoose';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly authService: AuthService,
-    private readonly activationRequestsService: ActivationRequestsService,
     private readonly usersService: UsersService,
   ) {
     super({
@@ -20,7 +17,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(email: string, password: string): Promise<User & Document> {
+  async validate(email: string, password: string): Promise<User> {
     const user = await this.authService.validateUser(email, password);
     // try {
     //   const activationRequest = await this.activationRequestsService.findOne({

@@ -29,24 +29,21 @@ import { GameSessionModule } from './game-session/game-session.module';
     ConfigModule.forRoot({
       envFilePath: '.env',
       isGlobal: true,
-      // validationSchema: Joi.object({
-      //   PORT: Joi.number().default(4000),
-      //   DB_HOST: Joi.string().required(),
-      //   DB_NAME: Joi.string().required(),
-      //   DB_USER: Joi.string().required(),
-      //   DB_PASS: Joi.string().required(),
-      //   REQUEST_URI: Joi.string().uri().required(),
-      //   ACCESS_TOKEN_KEY: Joi.string().required(),
-      //   ACCESS_TOKEN_EXPIRATION_TIME: Joi.string().required(),
-      //   COOKIE_SECRET: Joi.string().required(),
-      //   TOKEN_KEY: Joi.string(),
-      //   THROTTLE_TTL: Joi.number().default(300),
-      //   THROTTLE_LIMIT: Joi.number().default(100),
-      // }),
-      // validationOptions: {
-      //   allowUnknown: true,
-      //   abortEarly: true,
-      // },
+      validationSchema: Joi.object({
+        PORT: Joi.number().default(4000),
+        DB_ROOT: Joi.string().required(),
+        REQUEST_URI: Joi.string().required(),
+        ACCESS_TOKEN_KEY: Joi.string().required(),
+        ACCESS_TOKEN_EXPIRATION_TIME: Joi.string().required(),
+        COOKIE_SECRET: Joi.string().required(),
+        TOKEN_KEY: Joi.string(),
+        THROTTLE_TTL: Joi.number().default(300),
+        THROTTLE_LIMIT: Joi.number().default(100),
+      }),
+      validationOptions: {
+        allowUnknown: true,
+        abortEarly: true,
+      },
     }),
     // DB Module here
     I18nModule.forRoot({
@@ -78,11 +75,7 @@ import { GameSessionModule } from './game-session/game-session.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'sqlite',
-        host: config.getOrThrow<string>('DB_HOST'),
-        port: config.getOrThrow<number>('DB_PORT'),
-        username: config.getOrThrow<string>('DB_USER'),
-        password: config.getOrThrow<string>('DB_PASS'),
-        database: config.getOrThrow<string>('DB_NAME'),
+        database: config.getOrThrow<string>('DB_ROOT'),
         autoLoadEntities: true,
         synchronize: true, // Set to false in production
       }),
