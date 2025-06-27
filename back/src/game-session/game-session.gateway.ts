@@ -9,10 +9,14 @@ import {
 import { GameSessionService } from './game-session.service';
 import { CreateGameSessionDto } from './dto/create-game-session.dto';
 import { UpdateGameSessionDto } from './dto/update-game-session.dto';
-import { Logger } from '@nestjs/common';
+import { Logger, UseFilters, UsePipes } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { RegisterQueueDto } from './dto/register-queue.dto';
+import { WsExceptionFilter } from 'src/filters/ws-exception.filter';
+import { WsValidationPipe } from 'src/pipe/ws-validation.pipe';
 
+@UseFilters(WsExceptionFilter)
+@UsePipes(new WsValidationPipe())
 @WebSocketGateway({
   cors: {
     origin: '*',

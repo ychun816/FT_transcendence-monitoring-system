@@ -3,5 +3,7 @@
 * Roles decorator
 * Game session 
 * Websocket error handler
+    * ws-exception-transform.class.ts
+* Websocket class-transform, class-validator
 
 qcert password: password
