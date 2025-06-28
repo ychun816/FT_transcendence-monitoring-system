@@ -1,9 +1,15 @@
 * Auth service rewrite (to check)
 * Passport (oauth2 - google)
-* Roles decorator
-* Game session 
+* Roles decorator application
+* Game session
+    * establish session (joinWait)
+    * start game (gameStart)
+    * connection (pos, ball, etc...)
+    * end game
+    * save game (game-history)
 * Websocket error handler
     * ws-exception-transform.class.ts
+    -> HTTP error to real error (ws-exception filter)
 * Websocket class-transform, class-validator
 
 qcert password: password

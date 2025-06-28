@@ -1,31 +1,33 @@
 import {
   PipeTransform,
-  ArgumentMetadata,
   Injectable,
   ValidationPipe,
+  ArgumentMetadata,
 } from '@nestjs/common';
-import { WsException } from '@nestjs/websockets';
-import { plainToClass } from 'class-transformer';
-import { validate } from 'class-validator';
 import { ParametersInvalidException } from 'src/errors/exceptions/parameters-invalid.exception';
 
 @Injectable()
-export class WsValidationPipe
-  extends ValidationPipe
-  implements PipeTransform<any>
-{
-  // async transform(value: any, metadata: ArgumentMetadata) {
-  //   if (!metadata || !this.toValidate(metadata)) {
-  //     return value as unknown;
-  //   }
-
-  //   const object = plainToClass(metadata?.metatype, JSON.parse(value));
-  //   const errors = await validate(object);
-  //   if (errors.length > 0) {
-  //     throw new WsException('Wrong message!'); //new BadRequestException('Validation failed');
-  //   }
-  //   return value;
+export class WsValidationPipe extends ValidationPipe {
+  // constructor(options?: ValidationPipe) {
+  //   super({
+  //     disableErrorMessages: true,
+  //     transform: true,
+  //     whitelist: true,
+  //     ...options,
+  //   });
   // }
+
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async transform(value: unknown, metadata: ArgumentMetadata) {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value) as Record<string, unknown>;
+      } catch (err: unknown) {
+        throw new ParametersInvalidException();
+      }
+    }
+    return super.transform(value, metadata) as Promise<unknown>;
+  }
 
   createExceptionFactory() {
     return (validationErrors = []) => {
