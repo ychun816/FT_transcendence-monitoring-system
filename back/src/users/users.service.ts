@@ -24,7 +24,6 @@ export class UsersService {
   async createOne(createUserDto: CreateUserDto): Promise<void> {
     const user = new User();
     user.email = createUserDto.email;
-    user.name = createUserDto.name;
     user.nickname = createUserDto.nickname;
     user.authority = [AuthorityEnum.NORMAL];
     const password = this.authService.createPassword(createUserDto.password);

@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { UserQueue } from './entities/user-queue.entity';
-import { Socket } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
 import { JwtTokenInvalidException } from 'src/errors/exceptions/jwt-token-invalid.exception';
 import { TokenType } from 'src/auth/enum/token-type.enum';
@@ -12,8 +12,10 @@ import { RegisterQueueStatus } from './enum/register-queue-status.enum';
 import { GametypeEnum } from './enum/game-type.enum';
 import ms from 'ms';
 import { GameHistoryService } from 'src/game-history/game-history.service';
-import { GameHistory } from 'src/game-history/entities/game-history.entity';
 import { IngameStatus } from './enum/ingame-status.enum';
+import { ActiveGameSession } from './entities/active-game-session.entity';
+import { PongData } from './interface/pong-data.interface';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class GameSessionService {
@@ -24,8 +26,22 @@ export class GameSessionService {
     private readonly gameHistoryService: GameHistoryService,
   ) {}
   readonly userQueue: UserQueue[] = [];
-  readonly activeGameSessions: GameHistory[] = [];
+  readonly activeGameSessions: Record<string, ActiveGameSession<unknown>> = {};
   private readonly logger = new Logger(GameSessionService.name);
+  private _server: Server | null = null;
+
+  set server(server: Server) {
+    this._server = server;
+  }
+
+  get server(): Server {
+    if (!this._server) {
+      throw new Error(
+        'Critical server error : Socket.io server instance is not initialized.',
+      );
+    }
+    return this._server;
+  }
 
   async handleConnection(client: Socket) {
     try {
@@ -45,9 +61,11 @@ export class GameSessionService {
 
       client.handshake.auth.user = user;
 
-      for (const activeGameSession of this.activeGameSessions) {
+      for (const activeGameSession of Object.values(this.activeGameSessions)) {
         if (
-          activeGameSession.players.map((user) => user.id).includes(user.id)
+          activeGameSession.players
+            .map((user) => user.user.id)
+            .includes(user.id)
         ) {
           // TODO : reestablish user session, send info to client
           client.emit('gameSession', {
@@ -134,12 +152,12 @@ export class GameSessionService {
         this.logger.debug(
           `Game : ${gametype} - Creating room for PONG players: ${userQueue.length}`,
         );
-        this.handlePong(userQueue);
+        this.handlePong(userQueue); // TODO : How to handle promise?
       } else {
         this.logger.debug(
           `Game : ${gametype} - Creating room for SHOOT players: ${userQueue.length}`,
         );
-        this.handleShoot(userQueue);
+        this.handleShoot(userQueue); // TODO : How to handle promise?
       }
     };
     const timeDiffMs =
@@ -211,24 +229,47 @@ export class GameSessionService {
 
   // TODO : handle game
   async handlePong(usersList: UserQueue[]) {
+    const roomId = uuidv4();
+    const activeGameSession: ActiveGameSession<PongData> = {
+      id: roomId,
+      gametype: GametypeEnum.PONG,
+      status: IngameStatus.WAITING_FOR_PLAYERS,
+      players: usersList,
+      data: {} as PongData,
+    };
+
+    for (const userQueue of usersList) {
+      userQueue.client.emit('ingame-comm', activeGameSession);
+    }
+
+    this.activeGameSessions[activeGameSession.id] = activeGameSession;
+
+    for (const user of usersList) {
+      await user.client.join(roomId);
+    }
+
+    const room = this.server.of('/').in(roomId);
+
+    while (true) {
+      // Wait all players to enter the game
+      if (
+        (await room.fetchSockets()).length === activeGameSession.players.length
+      ) {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second
+      this.logger.debug(`Room : ${roomId} - Waiting for players to enter...`);
+    }
+
+    activeGameSession.status = IngameStatus.IN_PROGRESS;
+
+    room.emit('ingame-comm', activeGameSession);
+
     const gameHistory = await this.gameHistoryService.create({
       gametype: GametypeEnum.PONG,
       players: usersList.map((userQueue) => userQueue.user.id),
     });
-    this.activeGameSessions.push(gameHistory);
-
-    for (const user of usersList) {
-      user.client.emit('gameIngame', {
-        status: IngameStatus.WAITING_FOR_PLAYERS,
-      });
-    }
   }
 
-  async handleShoot(usersList: UserQueue[]) {
-    const gameHistory = await this.gameHistoryService.create({
-      gametype: GametypeEnum.SHOOT,
-      players: usersList.map((userQueue) => userQueue.user.id),
-    });
-    this.activeGameSessions.push(gameHistory);
-  }
+  async handleShoot(usersList: UserQueue[]) {}
 }

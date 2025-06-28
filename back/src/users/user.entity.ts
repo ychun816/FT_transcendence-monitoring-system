@@ -30,9 +30,6 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ type: 'text' })
-  name: string;
-
   @Column({ type: 'text', unique: true })
   nickname: string;
 
