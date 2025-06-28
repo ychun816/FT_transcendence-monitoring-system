@@ -7,19 +7,15 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { GameSessionService } from './game-session.service';
-import { CreateGameSessionDto } from './dto/create-game-session.dto';
-import { UpdateGameSessionDto } from './dto/update-game-session.dto';
-import { Logger, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Logger, UseFilters, UsePipes } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { RegisterQueueDto } from './dto/register-queue.dto';
 import { WsExceptionFilter } from 'src/filters/ws-exception.filter';
 import { WsValidationPipe } from 'src/pipe/ws-validation.pipe';
-import { ParametersInvalidException } from 'src/errors/exceptions/parameters-invalid.exception';
 import { ParseJsonPipe } from 'src/pipe/parse-json.pipe';
 
 @UseFilters(WsExceptionFilter)
-// @UsePipes(new WsValidationPipe())
-@UsePipes(new ParseJsonPipe(), new ValidationPipe())
+@UsePipes(new ParseJsonPipe(), new WsValidationPipe())
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -52,6 +48,9 @@ export class GameSessionGateway
   unregisterQueue(@ConnectedSocket() client: Socket) {
     this.gameSessionService.unregisterQueue(client);
   }
+
+  @SubscribeMessage('enterGame')
+  enterGame(@ConnectedSocket() client: Socket) {}
 
   // @SubscribeMessage('createGameSession')
   // create(

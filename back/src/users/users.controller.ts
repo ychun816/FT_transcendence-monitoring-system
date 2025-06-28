@@ -42,13 +42,13 @@ export class UsersController {
   @Get(':id')
   @Roles(AuthorityEnum.ADMIN)
   findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+    return this.usersService.findOne(id);
   }
 
   @Patch(':id')
   @Roles(AuthorityEnum.ADMIN)
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+    return this.usersService.update(id, updateUserDto);
   }
 
   @Patch('me')
@@ -63,7 +63,7 @@ export class UsersController {
   @Delete(':id')
   @Roles(AuthorityEnum.ADMIN)
   remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+    return this.usersService.remove(id);
   }
 
   @Delete('me')

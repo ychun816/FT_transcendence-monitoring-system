@@ -54,6 +54,7 @@ export class WsExceptionFilter {
       client.send(responseData);
     } else if (exception instanceof HttpException) {
       // handle http exception
+      console.log(exception);
       client.send('HTTP ERROR'); // TODO
     } else {
       client.send('UNKNOWN_ERROR');

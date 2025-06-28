@@ -62,7 +62,7 @@ export class UsersService {
     return users;
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {
       throw new DataNotFoundException({ name: 'user' });
@@ -78,14 +78,14 @@ export class UsersService {
     return user;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto) {
     const user = await this.usersRepository.update({ id }, updateUserDto);
     if (!user) {
       throw new DataNotFoundException({ name: 'user' });
     }
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const user = await this.usersRepository.softRemove({ id });
     if (!user) {
       throw new DataNotFoundException({ name: 'user' });

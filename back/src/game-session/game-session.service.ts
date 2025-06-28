@@ -1,10 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { CreateGameSessionDto } from './dto/create-game-session.dto';
-import { UpdateGameSessionDto } from './dto/update-game-session.dto';
 import { UserQueue } from './entities/user-queue.entity';
 import { Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
-import { WsException } from '@nestjs/websockets';
 import { JwtTokenInvalidException } from 'src/errors/exceptions/jwt-token-invalid.exception';
 import { TokenType } from 'src/auth/enum/token-type.enum';
 import { User } from 'src/users/user.entity';
@@ -14,14 +11,20 @@ import { UsersService } from 'src/users/users.service';
 import { RegisterQueueStatus } from './enum/register-queue-status.enum';
 import { GametypeEnum } from './enum/game-type.enum';
 import ms from 'ms';
+import { GameHistoryService } from 'src/game-history/game-history.service';
+import { GameHistory } from 'src/game-history/entities/game-history.entity';
+import { IngameStatus } from './enum/ingame-status.enum';
 
 @Injectable()
 export class GameSessionService {
   constructor(
     @Inject(AuthService) private readonly authService: AuthService,
     @Inject(UsersService) private readonly usersService: UsersService,
+    @Inject(GameHistoryService)
+    private readonly gameHistoryService: GameHistoryService,
   ) {}
   readonly userQueue: UserQueue[] = [];
+  readonly activeGameSessions: GameHistory[] = [];
   private readonly logger = new Logger(GameSessionService.name);
 
   async handleConnection(client: Socket) {
@@ -41,6 +44,19 @@ export class GameSessionService {
       this.logger.debug(`User connected : ${user.id} - ${user.email}`);
 
       client.handshake.auth.user = user;
+
+      for (const activeGameSession of this.activeGameSessions) {
+        if (
+          activeGameSession.players.map((user) => user.id).includes(user.id)
+        ) {
+          // TODO : reestablish user session, send info to client
+          client.emit('gameSession', {
+            gameHistory: activeGameSession,
+            gametype: activeGameSession.gametype,
+          });
+          return;
+        }
+      }
     } catch (error: unknown) {
       if (error instanceof HttpExceptionFactory) {
         client.send(error.errorDetails.code);
@@ -85,9 +101,8 @@ export class GameSessionService {
       entryTimestamp: new Date(Date.now()),
       user: user,
       gametype: registerQueueDto.gametype,
+      client,
     };
-
-    console.log(newUserQueue, registerQueueDto.gametype);
 
     this.userQueue.push(newUserQueue);
     client.emit('registerQueue', RegisterQueueStatus.REGISTERED);
@@ -114,14 +129,30 @@ export class GameSessionService {
     userQueue: [UserQueue, ...UserQueue[]],
     gametype: GametypeEnum,
   ) {
+    const launchGame = () => {
+      if (gametype == GametypeEnum.PONG) {
+        this.logger.debug(
+          `Game : ${gametype} - Creating room for PONG players: ${userQueue.length}`,
+        );
+        this.handlePong(userQueue);
+      } else {
+        this.logger.debug(
+          `Game : ${gametype} - Creating room for SHOOT players: ${userQueue.length}`,
+        );
+        this.handleShoot(userQueue);
+      }
+    };
     const timeDiffMs =
       Date.now() - userQueue[0].entryTimestamp.getUTCMilliseconds();
     if (timeDiffMs > ms('60s')) {
       // If user waiting >= 2 , create room
+      launchGame();
     } else if (timeDiffMs > ms('30s') && userQueue.length >= 4) {
       // If user waiting >= 4 , create room
+      launchGame();
     } else if (timeDiffMs > ms('20s') && userQueue.length >= 8) {
       // If user waiting >= 8 , create room
+      launchGame();
     } else {
       this.logger.debug(
         `Game : ${gametype} - Not enough players. Waiting time: ${ms(timeDiffMs)}`,
@@ -129,8 +160,10 @@ export class GameSessionService {
     }
   }
 
-  handleGameQueue() {
-    this.logger.debug('Handling game queue...');
+  getSeperatedUserQueue(): {
+    [GametypeEnum.PONG]: UserQueue[];
+    [GametypeEnum.SHOOT]: UserQueue[];
+  } {
     const queue: {
       [GametypeEnum.PONG]: UserQueue[];
       [GametypeEnum.SHOOT]: UserQueue[];
@@ -140,14 +173,21 @@ export class GameSessionService {
     };
 
     this.userQueue.forEach((userQueue) => {
-      // console.log(userQueue, this.userQueue);
       if (userQueue.gametype === GametypeEnum.PONG) {
         queue[GametypeEnum.PONG].push(userQueue);
       } else {
         queue[GametypeEnum.SHOOT].push(userQueue);
       }
     });
-    // console.log(queue);
+
+    return queue;
+  }
+
+  handleGameQueue() {
+    this.logger.debug('Handling game queue...');
+
+    const queue = this.getSeperatedUserQueue();
+
     this.logger.debug(
       `Current queue status - PONG : ${queue[GametypeEnum.PONG].length}, SHOOT : ${queue[GametypeEnum.SHOOT].length}`,
     );
@@ -169,23 +209,26 @@ export class GameSessionService {
     this.logger.debug('Handling game queue...Done!');
   }
 
-  create(createGameSessionDto: CreateGameSessionDto) {
-    return 'This action adds a new gameSession';
+  // TODO : handle game
+  async handlePong(usersList: UserQueue[]) {
+    const gameHistory = await this.gameHistoryService.create({
+      gametype: GametypeEnum.PONG,
+      players: usersList.map((userQueue) => userQueue.user.id),
+    });
+    this.activeGameSessions.push(gameHistory);
+
+    for (const user of usersList) {
+      user.client.emit('gameIngame', {
+        status: IngameStatus.WAITING_FOR_PLAYERS,
+      });
+    }
   }
 
-  findAll() {
-    return `This action returns all gameSession`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} gameSession`;
-  }
-
-  update(id: number, updateGameSessionDto: UpdateGameSessionDto) {
-    return `This action updates a #${id} gameSession`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} gameSession`;
+  async handleShoot(usersList: UserQueue[]) {
+    const gameHistory = await this.gameHistoryService.create({
+      gametype: GametypeEnum.SHOOT,
+      players: usersList.map((userQueue) => userQueue.user.id),
+    });
+    this.activeGameSessions.push(gameHistory);
   }
 }
