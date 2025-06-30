@@ -5,6 +5,7 @@ export class FindAllUsersDto {
     email: string;
     name: string;
     nickname: string;
+    id: string;
   }>;
   pagination: {
     page: number;

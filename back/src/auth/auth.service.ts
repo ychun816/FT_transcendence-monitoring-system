@@ -70,17 +70,20 @@ export class AuthService {
       type: TokenType.ACCESS,
     };
 
-    const result = this.createToken(tokenPayload as Record<string, any>, type);
+    const result = this.createToken(
+      tokenPayload as Record<string, any>,
+      TokenType.ACCESS,
+    );
 
     return result;
   }
 
-  async verifyToken<T = Record<string, any>>(
+  verifyToken<T = Record<string, any>>(
     token: string,
     type: TokenType,
     customKey?: string,
-  ): Promise<T & jwt.JwtPayload> {
-    const tokenValue = ((): T & jwt.JwtPayload => {
+  ): T & jwt.JwtPayload {
+    const tokenValue = ((): (T & jwt.JwtPayload) | undefined => {
       try {
         let tokenKey: string;
 
@@ -103,15 +106,16 @@ export class AuthService {
           throw new JwtTokenInvalidException();
         }
 
-        return result as any;
+        return result as unknown as T & jwt.JwtPayload;
       } catch (err: unknown) {
         if (err instanceof Error && err.name === 'TokenExpiredError') {
           throw new JwtTokenExpiredException();
         }
       }
+      return undefined;
     })();
 
-    if (!tokenValue?.type && tokenValue.type !== 0) {
+    if (!tokenValue || (!tokenValue?.type && tokenValue.type !== 0)) {
       throw new JwtTokenInvalidException();
     }
 
@@ -183,9 +187,6 @@ export class AuthService {
   }
 
   getCookieLogout(): string[] {
-    return [
-      `Authentication=; HttpOnly; Path=/; Max-Age=0`,
-      `RefreshToken=; HttpOnly; Path=/; Max-Age=0`,
-    ];
+    return [`Authentication=; HttpOnly; Path=/; Max-Age=0`];
   }
 }

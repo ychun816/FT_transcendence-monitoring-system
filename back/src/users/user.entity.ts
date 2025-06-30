@@ -1,39 +1,46 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsString } from 'class-validator';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  AfterLoad,
+  BeforeInsert,
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { AuthorityEnum } from './enums/authority.enum';
+import { Exclude } from 'class-transformer';
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn()
-  @IsNotEmpty()
-  id: number;
+  @BeforeInsert()
+  private beforeInsert() {
+    this.authority = JSON.stringify(
+      this.authority,
+    ) as unknown as AuthorityEnum[];
+  }
+
+  @AfterLoad()
+  private afterLoad() {
+    this.authority = JSON.parse(
+      this.authority as unknown as string,
+    ) as AuthorityEnum[];
+  }
+
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({ unique: true })
-  @IsEmail()
-  @IsNotEmpty()
   email: string;
 
-  @Column()
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @Column({ type: 'string', unique: true })
-  @IsString()
-  @IsNotEmpty()
+  @Column({ type: 'text', unique: true })
   nickname: string;
 
-  @Column({ type: 'array', enum: AuthorityEnum })
-  @IsEnum(AuthorityEnum, { each: true })
+  @Column('text')
   authority: AuthorityEnum[];
 
-  @Column({ type: 'string' })
-  @IsNotEmpty()
-  @IsString()
+  @Exclude()
+  @Column({ type: 'text' })
   pubkey: string;
 
-  @Column({ type: 'string' })
-  @IsString()
-  @IsNotEmpty()
+  @Exclude()
+  @Column({ type: 'text' })
   keysalt: string;
 }

@@ -1,0 +1,8 @@
+{
+  "data": {
+    "email": "email",
+    "name": "name",
+    "password": "password",
+    "nickname": "nickname"
+  }
+}

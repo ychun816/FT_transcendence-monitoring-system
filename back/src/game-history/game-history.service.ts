@@ -1,11 +1,32 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateGameHistoryDto } from './dto/create-game-history.dto';
 import { UpdateGameHistoryDto } from './dto/update-game-history.dto';
+import { GameHistory } from './entities/game-history.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class GameHistoryService {
-  create(createGameHistoryDto: CreateGameHistoryDto) {
-    return 'This action adds a new gameHistory';
+  constructor(
+    @InjectRepository(GameHistory)
+    private readonly gameHistoryRepository: Repository<GameHistory>,
+  ) {}
+
+  private readonly logger = new Logger(GameHistoryService.name);
+
+  async create(
+    createGameHistoryDto: CreateGameHistoryDto,
+  ): Promise<GameHistory> {
+    const gameHistory = new GameHistory();
+
+    try {
+      await this.gameHistoryRepository.save(gameHistory);
+
+      return gameHistory;
+    } catch (err) {
+      this.logger.debug(err);
+      throw err;
+    }
   }
 
   findAll() {

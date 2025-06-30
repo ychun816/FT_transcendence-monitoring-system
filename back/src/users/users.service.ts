@@ -1,13 +1,14 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { DataTypeNotSupportedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthService } from 'src/auth/auth.service';
 import { DataNotFoundException } from 'src/errors/exceptions/data-not-found.exception';
 import { FindAllUsersDto } from './dto/find-all-users.dto';
 import { UtilsService } from 'src/utils/utils.service';
+import { AuthorityEnum } from './enums/authority.enum';
 
 @Injectable()
 export class UsersService {
@@ -15,14 +16,16 @@ export class UsersService {
 
   constructor(
     @InjectRepository(User) private readonly usersRepository: Repository<User>,
-    @Inject(AuthService) private readonly authService: AuthService,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
     @Inject(UtilsService) private readonly utilsService: UtilsService,
   ) {}
 
   async createOne(createUserDto: CreateUserDto): Promise<void> {
     const user = new User();
     user.email = createUserDto.email;
-    user.name = createUserDto.name;
+    user.nickname = createUserDto.nickname;
+    user.authority = [AuthorityEnum.NORMAL];
     const password = this.authService.createPassword(createUserDto.password);
     user.pubkey = password.pubkey;
     user.keysalt = password.salt;
@@ -58,7 +61,7 @@ export class UsersService {
     return users;
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {
       throw new DataNotFoundException({ name: 'user' });
@@ -74,14 +77,14 @@ export class UsersService {
     return user;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto) {
     const user = await this.usersRepository.update({ id }, updateUserDto);
     if (!user) {
       throw new DataNotFoundException({ name: 'user' });
     }
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const user = await this.usersRepository.softRemove({ id });
     if (!user) {
       throw new DataNotFoundException({ name: 'user' });
