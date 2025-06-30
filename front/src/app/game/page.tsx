@@ -690,14 +690,14 @@ const GameLocal: React.FC<GameLocalProps> = () => {
       
       <div style={{
         position: 'absolute',
-        top: '1px',
+        top: '0px',
         left: 0,
         right: 0,
         display: 'flex',
         justifyContent: 'space-between',
         padding: '0 20px',
         zIndex: 2,
-        gap: '20px',
+        gap: '10px',
         flexWrap: 'wrap'
         
       }}>
