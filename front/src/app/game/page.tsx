@@ -151,7 +151,6 @@ const GameLocal: React.FC<GameLocalProps> = () => {
   const playerParticles = useRef<Particle[]>([]);
   const animationFrameId = useRef<number>(0);
   
-  // Fonction pour assombrir une couleur
   const darkenColor = (color: string, percent: number): string => {
     const r = parseInt(color.slice(1, 3), 16);
     const g = parseInt(color.slice(3, 5), 16);
@@ -164,7 +163,6 @@ const GameLocal: React.FC<GameLocalProps> = () => {
     return `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
   };
   
-  // Créer des particules de feu
   const createFireParticles = () => {
     const particles = [];
     for (let i = 0; i < 30; i++) {
@@ -189,7 +187,6 @@ const GameLocal: React.FC<GameLocalProps> = () => {
     setFireParticles(particles);
   };
   
-  // Vérifier les collisions entre joueurs
   const checkPlayerCollision = () => {
     const p1 = player1.current;
     const p2 = player2.current;
@@ -234,7 +231,6 @@ const GameLocal: React.FC<GameLocalProps> = () => {
     }
   };
   
-  // Créer des particules pour le dash
   const createDashParticles = (player: Player) => {
     const count = 15;
     for (let i = 0; i < count; i++) {
@@ -297,7 +293,6 @@ const GameLocal: React.FC<GameLocalProps> = () => {
     return false;
   };
   
-  // Créer une boule de feu
   const createFireball = (player: Player) => {
     if (player.lastDirection.dx === 0 && player.lastDirection.dy === 0) {
       player.lastDirection = { 
@@ -317,7 +312,6 @@ const GameLocal: React.FC<GameLocalProps> = () => {
     });
   };
   
-  // Vérifier les collisions entre boules de feu et joueurs
   const isColliding = (fireball: Fireball, player: Player): boolean => {
     return fireball.x > player.x && 
            fireball.x < player.x + player.width &&
@@ -325,9 +319,12 @@ const GameLocal: React.FC<GameLocalProps> = () => {
            fireball.y < player.y + player.height;
   };
   
-  // Réinitialiser le jeu
   const resetGame = (nbr: number) => {
-    player1.current.x = 150;
+    for (let i = fireballs.current.length - 1; i >= 0; i--)
+    {
+      fireballs.current.splice(i, 1);
+    }
+    player1.current.x = 150; 
     player1.current.y = 750 - 400;
     if (nbr === 0) {
       player1.current.health = 100;
@@ -343,7 +340,6 @@ const GameLocal: React.FC<GameLocalProps> = () => {
     }
     player2.current.lastDirection = { dx: 0, dy: 0 };
 
-    // Réinitialiser les touches
     const currentKeys = keys.current;
     for (const key in currentKeys) {
       if (currentKeys.hasOwnProperty(key)) {
@@ -352,7 +348,6 @@ const GameLocal: React.FC<GameLocalProps> = () => {
     }
   };
   
-  // Mise à jour de l'état du jeu
   const update = () => {
     const currentTime = Date.now();
     const p1 = player1.current;
@@ -524,7 +519,6 @@ const GameLocal: React.FC<GameLocalProps> = () => {
     }
   };
   
-  // Dessiner l'indicateur de direction
   const drawDirectionIndicator = (ctx: CanvasRenderingContext2D, player: Player) => {
     const indicatorLength = 50;
     const centerX = player.x + player.width/2;
@@ -580,7 +574,6 @@ const GameLocal: React.FC<GameLocalProps> = () => {
       ctx.strokeRect(wall.x, wall.y, wall.width, wall.height);
     });
     
-    // Dessiner les particules
     playerParticles.current.forEach(p => {
       ctx.globalAlpha = p.life / 30;
       ctx.fillStyle = p.color;
@@ -590,18 +583,15 @@ const GameLocal: React.FC<GameLocalProps> = () => {
     });
     ctx.globalAlpha = 1;
     
-    // Dessiner le sol
     ctx.fillStyle = '#333';
     ctx.fillRect(0, 750 - 20, 1700, 20);
     
-    // Dessiner les joueurs
     ctx.fillStyle = player1.current.color;
     ctx.fillRect(player1.current.x, player1.current.y, player1.current.width, player1.current.height);
     
     ctx.fillStyle = player2.current.color;
     ctx.fillRect(player2.current.x, player2.current.y, player2.current.width, player2.current.height);
     
-    // Dessiner les boules de feu
     fireballs.current.forEach(fb => {
       ctx.beginPath();
       ctx.arc(fb.x, fb.y, fb.radius, 0, Math.PI * 2);
@@ -613,7 +603,6 @@ const GameLocal: React.FC<GameLocalProps> = () => {
     drawDirectionIndicator(ctx, player2.current);
   };
   
-  // Boucle principale du jeu
   const gameLoop = () => {
     if (gameOver) return;
     
@@ -624,7 +613,6 @@ const GameLocal: React.FC<GameLocalProps> = () => {
     animationFrameId.current = requestAnimationFrame(gameLoop);
   };
   
-  // Gestion des événements clavier
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (keys.current.hasOwnProperty(e.code)) {
@@ -647,9 +635,7 @@ const GameLocal: React.FC<GameLocalProps> = () => {
     };
   }, []);
   
-  // Initialisation du jeu
   useEffect(() => {
-    // Configurer les murs en fonction de la map
     if (mapId === 'map2') {
       walls.current = [{ 
         x: 800, 
@@ -661,10 +647,8 @@ const GameLocal: React.FC<GameLocalProps> = () => {
       walls.current = [];
     }
     
-    // Créer les particules de feu
     createFireParticles();
     
-    // Démarrer la boucle de jeu
     gameLoop();
     
     return () => {
@@ -672,14 +656,12 @@ const GameLocal: React.FC<GameLocalProps> = () => {
     };
   }, [mapId]);
   
-  // Gestion du game over
   useEffect(() => {
     if (gameOver) {
       cancelAnimationFrame(animationFrameId.current);
     }
   }, [gameOver]);
   
-  // Couleurs assombries pour les effets
   const player1Dark = darkenColor(player1Color, 0.3);
   const player2Dark = darkenColor(player2Color, 0.3);
   
