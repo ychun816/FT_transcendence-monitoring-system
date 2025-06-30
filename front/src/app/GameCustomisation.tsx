@@ -357,3 +357,14 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 export default GameCustomisation;
+
+
+interface ITest {
+  hello: string;
+  world: number;
+}
+
+const test : ITest = {
+  hello: "Hello",
+  world: 42
+}

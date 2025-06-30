@@ -708,7 +708,7 @@ const GameLocal: React.FC<GameLocalProps> = () => {
       
       <div style={{
         position: 'absolute',
-        top: '20px',
+        top: '1px',
         left: 0,
         right: 0,
         display: 'flex',
@@ -717,12 +717,13 @@ const GameLocal: React.FC<GameLocalProps> = () => {
         zIndex: 2,
         gap: '20px',
         flexWrap: 'wrap'
+        
       }}>
         <div style={{ 
           background: 'rgba(0, 0, 0, 0.6)',
-          padding: '15px 20px',
+          padding: '12px 20px',
           borderRadius: '15px',
-          minWidth: '180px',
+          minWidth: '100px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -731,6 +732,7 @@ const GameLocal: React.FC<GameLocalProps> = () => {
           textAlign: 'center',
           fontSize: '1rem',
           fontWeight: 'bold',
+          margin: '10px'
         }}>
           <p>
             <span style={{ color: player1Color }}>Z Q S D</span> + 
@@ -738,14 +740,15 @@ const GameLocal: React.FC<GameLocalProps> = () => {
             <span style={{ color: player1Color }}> Shift gauche</span> pour dash
           </p>
         </div>
-        
         <div style={{ 
           background: 'rgba(0, 0, 0, 0.6)', 
-          padding: '20px',
+          padding: '13px',
           borderRadius: '15px',
           minWidth: '200px',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
           border: '2px solid rgba(255, 200, 0, 0.3)',
+          margin: '10px'
+          
         }}>
           <div style={{ 
             display: 'flex', 
@@ -785,11 +788,12 @@ const GameLocal: React.FC<GameLocalProps> = () => {
         
         <div style={{ 
           background: 'rgba(0, 0, 0, 0.6)', 
-          padding: '20px',
+          padding: '13px',
           borderRadius: '15px',
           minWidth: '200px',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
           border: '2px solid rgba(255, 200, 0, 0.3)',
+          margin: '10px'
         }}>
           <div style={{ 
             display: 'flex', 
@@ -840,6 +844,7 @@ const GameLocal: React.FC<GameLocalProps> = () => {
           textAlign: 'center',
           fontSize: '1rem',
           fontWeight: 'bold',
+          margin: '10px'
         }}>
           <p>
             <span style={{ color: player2Color }}>↑ ↓ ← →</span> + 
