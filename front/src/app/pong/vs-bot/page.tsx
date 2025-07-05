@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 
-const ConfigScreen = dynamic(() => import('./ConfigScreen'), { ssr: false });
+const ConfigScreen = dynamic(() => import('./ConfigScreen.tsx'), { ssr: false });
 
 const styles = {
   container: {
@@ -143,6 +143,16 @@ const styles = {
     zIndex: 10,
     boxShadow: '0 0 30px rgba(247, 37, 133, 0.7)',
   },
+  botIndicator: {
+    position: 'absolute',
+    top: '10px',
+    right: '10px',
+    backgroundColor: 'rgba(247, 37, 133, 0.7)',
+    color: 'white',
+    padding: '5px 10px',
+    borderRadius: '5px',
+    fontSize: '0.9rem',
+  }
 };
 
 const PongGame = () => {
@@ -155,6 +165,9 @@ const PongGame = () => {
   const [ballPosition, setBallPosition] = useState({ x: 0, y: 0 });
   const [ballVelocity, setBallVelocity] = useState({ x: 5, y: 3 });
   const [showConfigAfterGame, setShowConfigAfterGame] = useState(false);
+  const [botActive, setBotActive] = useState(false);
+  const [botTargetY, setBotTargetY] = useState<number | null>(null);
+  const prevBallPosition = useRef({ x: 0, y: 0 });
   
   const GAME_WIDTH = 800;
   const GAME_HEIGHT = 500;
@@ -162,7 +175,7 @@ const PongGame = () => {
   const PADDLE_HEIGHT = 100;
   const BALL_SIZE = 20;
   
-  const animationFrameRef = useRef();
+  const animationFrameRef = useRef<number>();
   const keysPressed = useRef({
     w: false,
     s: false,
@@ -172,17 +185,22 @@ const PongGame = () => {
   
   useEffect(() => {
     if (gameConfig) {
-      setPlayer1Y(GAME_HEIGHT / 2 - PADDLE_HEIGHT / 2);
-      setPlayer2Y(GAME_HEIGHT / 2 - PADDLE_HEIGHT / 2);
-      setBallPosition({ 
+      const centerY = GAME_HEIGHT / 2 - PADDLE_HEIGHT / 2;
+      setPlayer1Y(centerY);
+      setPlayer2Y(centerY);
+      const ballPos = { 
         x: GAME_WIDTH / 2 - BALL_SIZE / 2, 
         y: GAME_HEIGHT / 2 - BALL_SIZE / 2 
-      });
+      };
+      setBallPosition(ballPos);
+      prevBallPosition.current = ballPos;
+      setBotActive(gameConfig.botEnabled);
+      setBotTargetY(null);
     }
   }, [gameConfig]);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'w' || e.key === 'W') keysPressed.current.w = true;
       if (e.key === 's' || e.key === 'S') keysPressed.current.s = true;
       if (e.key === 'ArrowUp') keysPressed.current.arrowUp = true;
@@ -190,7 +208,7 @@ const PongGame = () => {
       if (e.key === ' ' && !gameStarted && gameConfig) startGame();
     };
     
-    const handleKeyUp = (e) => {
+    const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'w' || e.key === 'W') keysPressed.current.w = false;
       if (e.key === 's' || e.key === 'S') keysPressed.current.s = false;
       if (e.key === 'ArrowUp') keysPressed.current.arrowUp = false;
@@ -217,14 +235,23 @@ const PongGame = () => {
   };
   
   const resetBall = () => {
-    setBallPosition({ 
-      x: GAME_WIDTH / 2 - BALL_SIZE / 2, 
-      y: GAME_HEIGHT / 2 - BALL_SIZE / 2 
-    });
-    setBallVelocity({ 
-      x: 7,
-      y: (Math.random() * 4) - 2 
-    });
+    const centerX = GAME_WIDTH / 2 - BALL_SIZE / 2;
+    const centerY = GAME_HEIGHT / 2 - BALL_SIZE / 2;
+    
+    setBallPosition({ x: centerX, y: centerY });
+    
+    // Direction aléatoire mais toujours vers le joueur 2 au début
+    const initialVx = 7;
+    const initialVy = (Math.random() * 4) - 2;
+    
+    setBallVelocity({ x: initialVx, y: initialVy });
+    
+    // Prédiction initiale pour le bot
+    if (botActive) {
+      const predictedY = predictBallPosition(centerX, centerY, initialVx, initialVy);
+      const targetY = Math.max(0, Math.min(GAME_HEIGHT - PADDLE_HEIGHT, predictedY - PADDLE_HEIGHT / 2));
+      setBotTargetY(targetY);
+    }
   };
   
   const backToConfig = () => {
@@ -233,6 +260,7 @@ const PongGame = () => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
+    setBotTargetY(null);
   };
   
   useEffect(() => {
@@ -242,119 +270,182 @@ const PongGame = () => {
         cancelAnimationFrame(animationFrameRef.current);
       }
       
-      const timer = setTimeout(() => {
+      setTimeout(() => {
         setGameStarted(false);
         setShowConfigAfterGame(true);
       }, 800);
-      
-      return () => clearTimeout(timer);
     }
   }, [score]);
   
+  const predictBallPosition = (ballX: number, ballY: number, vx: number, vy: number) => {
+    let simX = ballX;
+    let simY = ballY;
+    let simVx = vx;
+    let simVy = vy;
+    
+    // Simuler le mouvement jusqu'à ce que la balle atteigne la raquette droite
+    while (simX < GAME_WIDTH - PADDLE_WIDTH - BALL_SIZE && simVx > 0) {
+      // Avancer d'un pas
+      simX += simVx;
+      simY += simVy;
+      
+      // Gérer les rebonds sur les bords
+      if (simY <= 0) {
+        simY = 0;
+        simVy = Math.abs(simVy);
+      } else if (simY >= GAME_HEIGHT - BALL_SIZE) {
+        simY = GAME_HEIGHT - BALL_SIZE;
+        simVy = -Math.abs(simVy);
+      }
+    }
+    
+    return simY;
+  };
+  
   useEffect(() => {
     if (!gameStarted || !gameConfig || gameOver) return;
-    
+
     const updateGame = () => {
-      if (gameOver) {
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
-        return;
-      }
-      const leftPaddleSpeed = gameConfig.leftPaddleSpeed;
-      const rightPaddleSpeed = gameConfig.rightPaddleSpeed;
+      if (gameOver) return;
       
+      // Sauvegarder la position actuelle avant de la modifier
+      prevBallPosition.current = ballPosition;
+    
+      // Déplacement des joueurs
       if (keysPressed.current.w && player1Y > 0) {
-        setPlayer1Y(prev => prev - leftPaddleSpeed);
+        setPlayer1Y(prev => prev - gameConfig.leftPaddleSpeed);
       }
       if (keysPressed.current.s && player1Y < GAME_HEIGHT - PADDLE_HEIGHT) {
-        setPlayer1Y(prev => prev + leftPaddleSpeed);
-      }
-      if (keysPressed.current.arrowUp && player2Y > 0) {
-        setPlayer2Y(prev => prev - rightPaddleSpeed);
-      }
-      if (keysPressed.current.arrowDown && player2Y < GAME_HEIGHT - PADDLE_HEIGHT) {
-        setPlayer2Y(prev => prev + rightPaddleSpeed);
+        setPlayer1Y(prev => prev + gameConfig.leftPaddleSpeed);
       }
       
-      setBallPosition(prev => {
-        const newX = prev.x + ballVelocity.x;
-        const newY = prev.y + ballVelocity.y;
-        
-        let newVx = ballVelocity.x;
-        let newVy = ballVelocity.y;
-        
-        if (newY <= 0) {
-          newVy = Math.abs(newVy);
-        } else if (newY >= GAME_HEIGHT - BALL_SIZE) {
-          newVy = -Math.abs(newVy);
-        }
-        
-        if (newX <= PADDLE_WIDTH && 
-            newX + BALL_SIZE >= 0 &&
-            newY + BALL_SIZE >= player1Y &&
-            newY <= player1Y + PADDLE_HEIGHT)
-        {
-          const hitPosition = (newY + BALL_SIZE/2 - player1Y) / PADDLE_HEIGHT;
-          const normalizedHit = Math.max(0.1, Math.min(0.9, hitPosition));
+      // Déplacement du bot
+      if (botActive && botTargetY !== null) {
+        const BOT_SPEED = 8;
+        setPlayer2Y(prev => {
+          const diff = botTargetY - prev;
           
-          const angle = (normalizedHit - 0.5) * (Math.PI / 2);
-          const speed = Math.sqrt(ballVelocity.x * ballVelocity.x + ballVelocity.y * ballVelocity.y) + 1;
+          // Si on est très proche, on reste sur place
+          if (Math.abs(diff) < 2) return prev;
           
-          newVx = Math.abs(Math.cos(angle)) * speed;
-          newVy = Math.sin(angle) * speed;
+          // Déplacement progressif
+          return prev + (diff > 0 ? 
+            Math.min(BOT_SPEED, diff) : 
+            Math.max(-BOT_SPEED, diff)
+          );
+        });
+      } 
+      // Déplacement du joueur 2 si le bot n'est pas activé
+      else if (!botActive) {
+        if (keysPressed.current.arrowUp && player2Y > 0) {
+          setPlayer2Y(prev => prev - gameConfig.rightPaddleSpeed);
         }
-        
-        if (
-          newX + BALL_SIZE >= GAME_WIDTH - PADDLE_WIDTH &&
-          newX <= GAME_WIDTH &&
-          newY + BALL_SIZE >= player2Y &&
-          newY <= player2Y + PADDLE_HEIGHT
-        ) {
-          const hitPosition = (newY + BALL_SIZE/2 - player2Y) / PADDLE_HEIGHT;
-          const normalizedHit = Math.max(0.1, Math.min(0.9, hitPosition));
-          
-          const angle = (normalizedHit - 0.5) * (Math.PI / 2);
-          const speed = Math.sqrt(ballVelocity.x * ballVelocity.x + ballVelocity.y * ballVelocity.y) + 1;
-          
-          newVx = -Math.abs(Math.cos(angle)) * speed;
-          newVy = Math.sin(angle) * speed;
+        if (keysPressed.current.arrowDown && player2Y < GAME_HEIGHT - PADDLE_HEIGHT) {
+          setPlayer2Y(prev => prev + gameConfig.rightPaddleSpeed);
         }
-        
-        if (newVx !== ballVelocity.x || newVy !== ballVelocity.y) {
-          setBallVelocity({ x: newVx, y: newVy });
-        }
-        
-        return { 
-          x: newX, 
-          y: Math.max(0, Math.min(GAME_HEIGHT - BALL_SIZE, newY)) 
-        };
-      });
-      
-      setBallPosition(prev => {
-        if (prev.x < -BALL_SIZE) {
-          setScore(prevScore => ({ ...prevScore, player2: prevScore.player2 + 0.5 }));
-          resetBall();
-          return { 
-            x: GAME_WIDTH / 2 - BALL_SIZE / 2, 
-            y: GAME_HEIGHT / 2 - BALL_SIZE / 2 
-          };
-        } else if (prev.x > GAME_WIDTH) {
-          setScore(prevScore => ({ ...prevScore, player1: prevScore.player1 + 0.5 }));
-          resetBall();
-          return { 
-            x: GAME_WIDTH / 2 - BALL_SIZE / 2, 
-            y: GAME_HEIGHT / 2 - BALL_SIZE / 2 
-          };
-        }
-        return prev;
-      });
-      if (gameOver) {
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
-        return;
       }
+    
+      let newX = ballPosition.x + ballVelocity.x;
+      let newY = ballPosition.y + ballVelocity.y;
+      let newVx = ballVelocity.x;
+      let newVy = ballVelocity.y;
+      let scored = false;
+      
+      // Rebonds sur les bords
+      if (newY <= 0) {
+        newY = 0;
+        newVy = Math.abs(newVy);
+      } else if (newY >= GAME_HEIGHT - BALL_SIZE) {
+        newY = GAME_HEIGHT - BALL_SIZE;
+        newVy = -Math.abs(newVy);
+      }
+      
+      // Détection améliorée des collisions avec les raquettes
+      // Joueur 1 (gauche) - détection continue
+      if (newVx < 0) {
+        // Vérifier si la balle traverse la ligne de la raquette
+        if (prevBallPosition.current.x >= PADDLE_WIDTH && newX < PADDLE_WIDTH) {
+          // Calculer le point de collision exact
+          const t = (PADDLE_WIDTH - prevBallPosition.current.x) / (newX - prevBallPosition.current.x);
+          const collisionY = prevBallPosition.current.y + (newY - prevBallPosition.current.y) * t;
+          
+          if (collisionY + BALL_SIZE >= player1Y && collisionY <= player1Y + PADDLE_HEIGHT) {
+            // Ajuster la position et la vitesse
+            newX = PADDLE_WIDTH;
+            newY = collisionY;
+            
+            const hitPosition = (collisionY + BALL_SIZE/2 - player1Y) / PADDLE_HEIGHT;
+            const normalizedHit = Math.max(0.1, Math.min(0.9, hitPosition));
+            const angle = (normalizedHit - 0.5) * (Math.PI / 2);
+            const speed = Math.sqrt(newVx * newVx + newVy * newVy) + 1;
+            
+            newVx = Math.abs(Math.cos(angle)) * speed;
+            newVy = Math.sin(angle) * speed;
+            
+            // Prédiction pour le bot après un coup
+            if (botActive) {
+              const predictedY = predictBallPosition(newX, newY, newVx, newVy);
+              const targetY = Math.max(0, Math.min(
+                GAME_HEIGHT - PADDLE_HEIGHT, 
+                predictedY - PADDLE_HEIGHT / 2
+              ));
+              
+              setBotTargetY(targetY);
+            }
+          }
+        }
+      }
+      
+      // Joueur 2 (droite) - détection continue
+      if (newVx > 0) {
+        if (prevBallPosition.current.x + BALL_SIZE <= GAME_WIDTH - PADDLE_WIDTH && 
+            newX + BALL_SIZE > GAME_WIDTH - PADDLE_WIDTH) {
+          const t = (GAME_WIDTH - PADDLE_WIDTH - BALL_SIZE - prevBallPosition.current.x) / (newX - prevBallPosition.current.x);
+          const collisionY = prevBallPosition.current.y + (newY - prevBallPosition.current.y) * t;
+          
+          if (collisionY + BALL_SIZE >= player2Y && collisionY <= player2Y + PADDLE_HEIGHT) {
+            newX = GAME_WIDTH - PADDLE_WIDTH - BALL_SIZE;
+            newY = collisionY;
+            
+            const hitPosition = (collisionY + BALL_SIZE/2 - player2Y) / PADDLE_HEIGHT;
+            const normalizedHit = Math.max(0.1, Math.min(0.9, hitPosition));
+            const angle = (normalizedHit - 0.5) * (Math.PI / 2);
+            const speed = Math.sqrt(newVx * newVx + newVy * newVy) + 1;
+            
+            newVx = -Math.abs(Math.cos(angle)) * speed;
+            newVy = Math.sin(angle) * speed;
+          }
+        }
+      }
+      
+      // Vérifier les points
+      if (newX < -BALL_SIZE) {
+        setScore(prev => ({ ...prev, player2: prev.player2 + 1 }));
+        scored = true;
+      } else if (newX > GAME_WIDTH) {
+        setScore(prev => ({ ...prev, player1: prev.player1 + 1 }));
+        scored = true;
+      }
+      
+      // Mise à jour de l'état
+      if (scored) {
+        resetBall();
+      } else {
+        setBallPosition({ x: newX, y: newY });
+        setBallVelocity({ x: newVx, y: newVy });
+        
+        // Prédiction continue pour le bot
+        if (botActive && newVx > 0) {
+          const predictedY = predictBallPosition(newX, newY, newVx, newVy);
+          const targetY = Math.max(0, Math.min(
+            GAME_HEIGHT - PADDLE_HEIGHT, 
+            predictedY - PADDLE_HEIGHT / 2
+          ));
+          
+          setBotTargetY(targetY);
+        }
+      }
+      
       animationFrameRef.current = requestAnimationFrame(updateGame);
     };
     
@@ -365,7 +456,17 @@ const PongGame = () => {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [gameStarted, ballVelocity, player1Y, player2Y, gameConfig]);
+  }, [
+    gameStarted, 
+    ballPosition, 
+    ballVelocity, 
+    player1Y, 
+    player2Y, 
+    gameConfig, 
+    botActive, 
+    gameOver, 
+    botTargetY
+  ]);
   
   if (!gameConfig || showConfigAfterGame) {
     return (
@@ -421,6 +522,10 @@ const PongGame = () => {
           
           <div style={styles.score1}>{score.player1}</div>
           <div style={styles.score2}>{score.player2}</div>
+          
+          {botActive && (
+            <div style={styles.botIndicator}>Bot activé</div>
+          )}
         </div>
       </div>
       
@@ -431,7 +536,11 @@ const PongGame = () => {
           </button>
           <div style={styles.instructions}>
             <p><strong>Joueur 1 (gauche):</strong> Touches W et S</p>
-            <p><strong>Joueur 2 (droite):</strong> Flèches ↑ et ↓</p>
+            {botActive ? (
+              <p><strong>Joueur 2 (droite):</strong> Contrôlé par le bot</p>
+            ) : (
+              <p><strong>Joueur 2 (droite):</strong> Flèches ↑ et ↓</p>
+            )}
             <p>Premier à 5 points gagne!</p>
           </div>
         </div>
@@ -440,7 +549,11 @@ const PongGame = () => {
       {gameStarted && (
         <div style={styles.controlsInfo}>
           <div>Joueur 1: W (monter) - S (descendre)</div>
-          <div>Joueur 2: ↑ (monter) - ↓ (descendre)</div>
+          {botActive ? (
+            <div>Joueur 2: Contrôlé par le bot</div>
+          ) : (
+            <div>Joueur 2: ↑ (monter) - ↓ (descendre)</div>
+          )}
         </div>
       )}
       
@@ -448,6 +561,9 @@ const PongGame = () => {
         <div style={styles.winnerScreen}>
           <h2>Partie terminée!</h2>
           <p>Le joueur {score.player1 === 5 ? 1 : 2} gagne!</p>
+          <button style={styles.restartButton} onClick={backToConfig}>
+            Rejouer
+          </button>
         </div>
       )}
     </div>
