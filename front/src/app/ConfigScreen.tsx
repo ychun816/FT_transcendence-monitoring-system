@@ -93,7 +93,7 @@ const ConfigScreen = ({ onConfigSubmit }) => {
       <h2 style={styles.configTitle}>Configuration du jeu</h2>
       
       <form onSubmit={handleSubmit} style={styles.configForm}>
-        {/* Vitesse raquette gauche */}
+        {}
         <div style={styles.configGroup}>
           <label style={styles.configLabel}>
             Vitesse raquette gauche: {leftPaddleSpeed}
@@ -109,7 +109,7 @@ const ConfigScreen = ({ onConfigSubmit }) => {
           />
         </div>
         
-        {/* Vitesse raquette droite */}
+        {}
         <div style={styles.configGroup}>
           <label style={styles.configLabel}>
             Vitesse raquette droite: {rightPaddleSpeed}
@@ -125,7 +125,7 @@ const ConfigScreen = ({ onConfigSubmit }) => {
           />
         </div>
         
-        {/* Couleurs restent inchangées */}
+        {}
         <div style={styles.configGroup}>
           <label style={styles.configLabel}>
             Couleur raquette gauche:

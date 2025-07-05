@@ -56,7 +56,7 @@ interface Particle {
   speedY?: number;
 }
 
-const GameLocal: React.FC<GameLocalProps> = () => {
+const GameLocal = () => {
   const searchParams = useSearchParams();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fireEffectRef = useRef<HTMLDivElement>(null);
