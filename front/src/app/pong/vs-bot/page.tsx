@@ -157,7 +157,7 @@ const styles = {
 
 const PongGame = () => {
   const [gameOver, setGameOver] = useState(false);
-  const [gameConfig, setGameConfig] = useState(null);
+  const [gameConfig, setGameConfig] = useState<any>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [score, setScore] = useState({ player1: 0, player2: 0 });
   const [player1Y, setPlayer1Y] = useState(0);
@@ -165,7 +165,6 @@ const PongGame = () => {
   const [ballPosition, setBallPosition] = useState({ x: 0, y: 0 });
   const [ballVelocity, setBallVelocity] = useState({ x: 5, y: 3 });
   const [showConfigAfterGame, setShowConfigAfterGame] = useState(false);
-  const [botActive, setBotActive] = useState(false);
   const [botTargetY, setBotTargetY] = useState<number | null>(null);
   const prevBallPosition = useRef({ x: 0, y: 0 });
   
@@ -194,7 +193,6 @@ const PongGame = () => {
       };
       setBallPosition(ballPos);
       prevBallPosition.current = ballPos;
-      setBotActive(gameConfig.botEnabled);
       setBotTargetY(null);
     }
   }, [gameConfig]);
@@ -240,18 +238,14 @@ const PongGame = () => {
     
     setBallPosition({ x: centerX, y: centerY });
     
-    // Direction aléatoire mais toujours vers le joueur 2 au début
     const initialVx = 7;
     const initialVy = (Math.random() * 4) - 2;
     
     setBallVelocity({ x: initialVx, y: initialVy });
     
-    // Prédiction initiale pour le bot
-    if (botActive) {
-      const predictedY = predictBallPosition(centerX, centerY, initialVx, initialVy);
-      const targetY = Math.max(0, Math.min(GAME_HEIGHT - PADDLE_HEIGHT, predictedY - PADDLE_HEIGHT / 2));
-      setBotTargetY(targetY);
-    }
+    const predictedY = predictBallPosition(centerX, centerY, initialVx, initialVy);
+    const targetY = Math.max(0, Math.min(GAME_HEIGHT - PADDLE_HEIGHT, predictedY - PADDLE_HEIGHT / 2));
+    setBotTargetY(targetY);
   };
   
   const backToConfig = () => {
@@ -283,13 +277,10 @@ const PongGame = () => {
     let simVx = vx;
     let simVy = vy;
     
-    // Simuler le mouvement jusqu'à ce que la balle atteigne la raquette droite
     while (simX < GAME_WIDTH - PADDLE_WIDTH - BALL_SIZE && simVx > 0) {
-      // Avancer d'un pas
       simX += simVx;
       simY += simVy;
       
-      // Gérer les rebonds sur les bords
       if (simY <= 0) {
         simY = 0;
         simVy = Math.abs(simVy);
@@ -308,41 +299,27 @@ const PongGame = () => {
     const updateGame = () => {
       if (gameOver) return;
       
-      // Sauvegarder la position actuelle avant de la modifier
       prevBallPosition.current = ballPosition;
-    
-      // Déplacement des joueurs
+
       if (keysPressed.current.w && player1Y > 0) {
-        setPlayer1Y(prev => prev - gameConfig.leftPaddleSpeed);
+        setPlayer1Y(prev => prev - Number(gameConfig.leftPaddleSpeed));
       }
       if (keysPressed.current.s && player1Y < GAME_HEIGHT - PADDLE_HEIGHT) {
-        setPlayer1Y(prev => prev + gameConfig.leftPaddleSpeed);
+        setPlayer1Y(prev => prev + Number(gameConfig.leftPaddleSpeed));
       }
       
-      // Déplacement du bot
-      if (botActive && botTargetY !== null) {
-        const BOT_SPEED = 8;
+      if (botTargetY !== null) {
+        const botSpeed = gameConfig.botSpeed || 5;
         setPlayer2Y(prev => {
           const diff = botTargetY - prev;
           
-          // Si on est très proche, on reste sur place
           if (Math.abs(diff) < 2) return prev;
           
-          // Déplacement progressif
           return prev + (diff > 0 ? 
-            Math.min(BOT_SPEED, diff) : 
-            Math.max(-BOT_SPEED, diff)
+            Math.min(botSpeed, diff) : 
+            Math.max(-botSpeed, diff)
           );
         });
-      } 
-      // Déplacement du joueur 2 si le bot n'est pas activé
-      else if (!botActive) {
-        if (keysPressed.current.arrowUp && player2Y > 0) {
-          setPlayer2Y(prev => prev - gameConfig.rightPaddleSpeed);
-        }
-        if (keysPressed.current.arrowDown && player2Y < GAME_HEIGHT - PADDLE_HEIGHT) {
-          setPlayer2Y(prev => prev + gameConfig.rightPaddleSpeed);
-        }
       }
     
       let newX = ballPosition.x + ballVelocity.x;
@@ -351,7 +328,6 @@ const PongGame = () => {
       let newVy = ballVelocity.y;
       let scored = false;
       
-      // Rebonds sur les bords
       if (newY <= 0) {
         newY = 0;
         newVy = Math.abs(newVy);
@@ -360,17 +336,12 @@ const PongGame = () => {
         newVy = -Math.abs(newVy);
       }
       
-      // Détection améliorée des collisions avec les raquettes
-      // Joueur 1 (gauche) - détection continue
       if (newVx < 0) {
-        // Vérifier si la balle traverse la ligne de la raquette
         if (prevBallPosition.current.x >= PADDLE_WIDTH && newX < PADDLE_WIDTH) {
-          // Calculer le point de collision exact
           const t = (PADDLE_WIDTH - prevBallPosition.current.x) / (newX - prevBallPosition.current.x);
           const collisionY = prevBallPosition.current.y + (newY - prevBallPosition.current.y) * t;
           
           if (collisionY + BALL_SIZE >= player1Y && collisionY <= player1Y + PADDLE_HEIGHT) {
-            // Ajuster la position et la vitesse
             newX = PADDLE_WIDTH;
             newY = collisionY;
             
@@ -382,21 +353,17 @@ const PongGame = () => {
             newVx = Math.abs(Math.cos(angle)) * speed;
             newVy = Math.sin(angle) * speed;
             
-            // Prédiction pour le bot après un coup
-            if (botActive) {
-              const predictedY = predictBallPosition(newX, newY, newVx, newVy);
-              const targetY = Math.max(0, Math.min(
-                GAME_HEIGHT - PADDLE_HEIGHT, 
-                predictedY - PADDLE_HEIGHT / 2
-              ));
-              
-              setBotTargetY(targetY);
-            }
+            const predictedY = predictBallPosition(newX, newY, newVx, newVy);
+            const targetY = Math.max(0, Math.min(
+              GAME_HEIGHT - PADDLE_HEIGHT, 
+              predictedY - PADDLE_HEIGHT / 2
+            ));
+            
+            setBotTargetY(targetY);
           }
         }
       }
       
-      // Joueur 2 (droite) - détection continue
       if (newVx > 0) {
         if (prevBallPosition.current.x + BALL_SIZE <= GAME_WIDTH - PADDLE_WIDTH && 
             newX + BALL_SIZE > GAME_WIDTH - PADDLE_WIDTH) {
@@ -418,7 +385,6 @@ const PongGame = () => {
         }
       }
       
-      // Vérifier les points
       if (newX < -BALL_SIZE) {
         setScore(prev => ({ ...prev, player2: prev.player2 + 1 }));
         scored = true;
@@ -427,15 +393,13 @@ const PongGame = () => {
         scored = true;
       }
       
-      // Mise à jour de l'état
       if (scored) {
         resetBall();
       } else {
         setBallPosition({ x: newX, y: newY });
         setBallVelocity({ x: newVx, y: newVy });
         
-        // Prédiction continue pour le bot
-        if (botActive && newVx > 0) {
+        if (newVx > 0) {
           const predictedY = predictBallPosition(newX, newY, newVx, newVy);
           const targetY = Math.max(0, Math.min(
             GAME_HEIGHT - PADDLE_HEIGHT, 
@@ -463,7 +427,6 @@ const PongGame = () => {
     player1Y, 
     player2Y, 
     gameConfig, 
-    botActive, 
     gameOver, 
     botTargetY
   ]);
@@ -471,7 +434,7 @@ const PongGame = () => {
   if (!gameConfig || showConfigAfterGame) {
     return (
       <div style={styles.container}>
-        <h1 style={styles.title}>Pong à deux joueurs</h1>
+        <h1 style={styles.title}>Pong contre un bot</h1>
         <ConfigScreen onConfigSubmit={(config) => {
           setGameConfig(config);
           setShowConfigAfterGame(false);
@@ -523,9 +486,7 @@ const PongGame = () => {
           <div style={styles.score1}>{score.player1}</div>
           <div style={styles.score2}>{score.player2}</div>
           
-          {botActive && (
-            <div style={styles.botIndicator}>Bot activé</div>
-          )}
+          <div style={styles.botIndicator}>Bot activé</div>
         </div>
       </div>
       
@@ -536,11 +497,7 @@ const PongGame = () => {
           </button>
           <div style={styles.instructions}>
             <p><strong>Joueur 1 (gauche):</strong> Touches W et S</p>
-            {botActive ? (
-              <p><strong>Joueur 2 (droite):</strong> Contrôlé par le bot</p>
-            ) : (
-              <p><strong>Joueur 2 (droite):</strong> Flèches ↑ et ↓</p>
-            )}
+            <p><strong>Joueur 2 (droite):</strong> Contrôlé par le bot</p>
             <p>Premier à 5 points gagne!</p>
           </div>
         </div>
@@ -549,11 +506,7 @@ const PongGame = () => {
       {gameStarted && (
         <div style={styles.controlsInfo}>
           <div>Joueur 1: W (monter) - S (descendre)</div>
-          {botActive ? (
-            <div>Joueur 2: Contrôlé par le bot</div>
-          ) : (
-            <div>Joueur 2: ↑ (monter) - ↓ (descendre)</div>
-          )}
+          <div>Joueur 2: Contrôlé par le bot</div>
         </div>
       )}
       

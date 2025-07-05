@@ -30,13 +30,26 @@ const styles = {
     color: '#e6e6e6',
     textAlign: 'left',
   },
-  colorInput: {
-    width: '100%',
-    padding: '8px',
-    borderRadius: '5px',
-    border: '1px solid #4cc9f0',
-    backgroundColor: 'rgba(26, 26, 46, 0.7)',
-    color: '#e6e6e6',
+  colorButtonsContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px',
+    justifyContent: 'space-between',
+  },
+  colorButton: {
+    width: '30px',
+    height: '30px',
+    borderRadius: '50%',
+    border: '2px solid transparent',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    '&:hover': {
+      transform: 'scale(1.1)',
+    }
+  },
+  colorButtonSelected: {
+    border: '2px solid white',
+    boxShadow: '0 0 8px white',
   },
   rangeInput: {
     width: '100%',
@@ -48,16 +61,29 @@ const styles = {
     color: '#4cc9f0',
     fontWeight: 'bold',
   },
-  botToggle: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+  difficultyContainer: {
     margin: '15px 0',
   },
-  toggleLabel: {
-    marginLeft: '10px',
-    fontSize: '1rem',
+  difficultyLabel: {
+    marginBottom: '10px',
     color: '#e6e6e6',
+    textAlign: 'center',
+  },
+  difficultyButtons: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '10px',
+    flexWrap: 'wrap',
+  },
+  difficultyButton: {
+    flex: 1,
+    padding: '10px',
+    borderRadius: '5px',
+    border: 'none',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    transition: 'all 0.3s',
+    minWidth: '80px',
   },
   startButton: {
     padding: '15px 40px',
@@ -75,7 +101,7 @@ const styles = {
       backgroundColor: '#3ab0d0',
       transform: 'scale(1.05)',
     }
-  }
+  },
 };
 
 const ConfigScreen = ({ onConfigSubmit }) => {
@@ -83,16 +109,55 @@ const ConfigScreen = ({ onConfigSubmit }) => {
     leftPaddleColor: '#4cc9f0',
     rightPaddleColor: '#f72585',
     ballColor: '#ffffff',
-    leftPaddleSpeed: 20,
-    rightPaddleSpeed: 8,
-    botEnabled: true, // Activé par défaut
+    leftPaddleSpeed: 25,
+    botSpeed: 5,
   });
+
+  const colorOptions = [
+    '#4cc9f0', // Cyan
+    '#f72585', // Rose
+    '#7209b7', // Violet
+    '#3a0ca3', // Bleu foncé
+    '#4361ee', // Bleu
+    '#4cc9f0', // Cyan (dupliqué pour garder l'original)
+    '#ffbe0b', // Jaune
+    '#fb5607', // Orange
+    '#ff006e', // Rose vif
+    '#8338ec', // Violet clair
+    '#3a86ff', // Bleu clair
+    '#06d6a0', // Vert
+    '#118ab2', // Bleu-vert
+    '#073b4c', // Bleu marine
+    '#ef476f', // Rouge
+    '#ffd166', // Jaune pâle
+    '#ffffff', // Blanc
+  ];
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const finalValue = type === 'checkbox' 
+      ? checked 
+      : type === 'range' 
+        ? Number(value) 
+        : value;
+    
     setConfig(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: finalValue
+    }));
+  };
+
+  const setColor = (colorType, color) => {
+    setConfig(prev => ({
+      ...prev,
+      [colorType]: color
+    }));
+  };
+
+  const setBotDifficulty = (speed) => {
+    setConfig(prev => ({
+      ...prev,
+      botSpeed: speed
     }));
   };
 
@@ -107,37 +172,61 @@ const ConfigScreen = ({ onConfigSubmit }) => {
       <form onSubmit={handleSubmit} style={styles.configForm}>
         <div style={styles.inputGroup}>
           <label style={styles.label}>Couleur raquette gauche:</label>
-          <input
-            type="color"
-            name="leftPaddleColor"
-            value={config.leftPaddleColor}
-            onChange={handleChange}
-            style={styles.colorInput}
-          />
+          <div style={styles.colorButtonsContainer}>
+            {colorOptions.map((color, index) => (
+              <button
+                key={`left-${index}`}
+                type="button"
+                style={{
+                  ...styles.colorButton,
+                  backgroundColor: color,
+                  ...(config.leftPaddleColor === color ? styles.colorButtonSelected : {})
+                }}
+                onClick={() => setColor('leftPaddleColor', color)}
+                title={color}
+              />
+            ))}
+          </div>
         </div>
         
         <div style={styles.inputGroup}>
           <label style={styles.label}>Couleur raquette droite:</label>
-          <input
-            type="color"
-            name="rightPaddleColor"
-            value={config.rightPaddleColor}
-            onChange={handleChange}
-            style={styles.colorInput}
-          />
+          <div style={styles.colorButtonsContainer}>
+            {colorOptions.map((color, index) => (
+              <button
+                key={`right-${index}`}
+                type="button"
+                style={{
+                  ...styles.colorButton,
+                  backgroundColor: color,
+                  ...(config.rightPaddleColor === color ? styles.colorButtonSelected : {})
+                }}
+                onClick={() => setColor('rightPaddleColor', color)}
+                title={color}
+              />
+            ))}
+          </div>
         </div>
         
         <div style={styles.inputGroup}>
           <label style={styles.label}>Couleur de la balle:</label>
-          <input
-            type="color"
-            name="ballColor"
-            value={config.ballColor}
-            onChange={handleChange}
-            style={styles.colorInput}
-          />
+          <div style={styles.colorButtonsContainer}>
+            {colorOptions.map((color, index) => (
+              <button
+                key={`ball-${index}`}
+                type="button"
+                style={{
+                  ...styles.colorButton,
+                  backgroundColor: color,
+                  ...(config.ballColor === color ? styles.colorButtonSelected : {})
+                }}
+                onClick={() => setColor('ballColor', color)}
+                title={color}
+              />
+            ))}
+          </div>
         </div>
-        
+
         <div style={styles.inputGroup}>
           <label style={styles.label}>
             Vitesse raquette gauche: <span style={styles.rangeValue}>{config.leftPaddleSpeed}</span>
@@ -145,25 +234,67 @@ const ConfigScreen = ({ onConfigSubmit }) => {
           <input
             type="range"
             name="leftPaddleSpeed"
-            min="5"
-            max="15"
+            min="15"
+            max="30"
             value={config.leftPaddleSpeed}
             onChange={handleChange}
             style={styles.rangeInput}
           />
         </div>
         
-        <div style={styles.botToggle}>
-          <input
-            type="checkbox"
-            id="botEnabled"
-            name="botEnabled"
-            checked={config.botEnabled}
-            onChange={handleChange}
-          />
-          <label htmlFor="botEnabled" style={styles.toggleLabel}>
-            Activer le bot (Joueur 2)
+        <div style={styles.difficultyContainer}>
+          <label style={styles.difficultyLabel}>
+            Difficulté du bot:
           </label>
+          <div style={styles.difficultyButtons}>
+            <button 
+              type="button"
+              style={{ 
+                ...styles.difficultyButton,
+                backgroundColor: config.botSpeed === 3 ? '#4cc9f0' : '#16213e',
+                color: config.botSpeed === 3 ? '#16213e' : '#4cc9f0',
+              }}
+              onClick={() => setBotDifficulty(3)}
+            >
+              Easy
+            </button>
+            <button 
+              type="button"
+              style={{ 
+                ...styles.difficultyButton,
+                backgroundColor: config.botSpeed === 5 ? '#4cc9f0' : '#16213e',
+                color: config.botSpeed === 5 ? '#16213e' : '#4cc9f0',
+              }}
+              onClick={() => setBotDifficulty(5)}
+            >
+              Medium
+            </button>
+            <button 
+              type="button"
+              style={{ 
+                ...styles.difficultyButton,
+                backgroundColor: config.botSpeed === 7 ? '#4cc9f0' : '#16213e',
+                color: config.botSpeed === 7 ? '#16213e' : '#4cc9f0',
+              }}
+              onClick={() => setBotDifficulty(7)}
+            >
+              Difficile
+            </button>
+            <button 
+              type="button"
+              style={{ 
+                ...styles.difficultyButton,
+                backgroundColor: config.botSpeed === 10 ? '#4cc9f0' : '#16213e',
+                color: config.botSpeed === 10 ? '#16213e' : '#4cc9f0',
+              }}
+              onClick={() => setBotDifficulty(10)}
+            >
+              Impossible
+            </button>
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '5px', color: '#4cc9f0', fontWeight: 'bold' }}>
+            Vitesse: {config.botSpeed}
+          </div>
         </div>
         
         <button type="submit" style={styles.startButton}>
