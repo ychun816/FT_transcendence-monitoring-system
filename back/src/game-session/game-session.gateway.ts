@@ -15,6 +15,7 @@ import { RegisterQueueDto } from './dto/register-queue.dto';
 import { WsExceptionFilter } from 'src/filters/ws-exception.filter';
 import { WsValidationPipe } from 'src/pipe/ws-validation.pipe';
 import { ParseJsonPipe } from 'src/pipe/parse-json.pipe';
+import { GameConfigDto } from './dto/game-config.dto';
 
 @UseFilters(WsExceptionFilter)
 @UsePipes(new ParseJsonPipe(), new WsValidationPipe())
@@ -56,37 +57,21 @@ export class GameSessionGateway
     this.gameSessionService.unregisterQueue(client);
   }
 
-  @SubscribeMessage('enterGame')
-  enterGame(@ConnectedSocket() client: Socket) {}
+  @SubscribeMessage('readyUser')
+  readyUser(@ConnectedSocket() client: Socket) {
+    this.gameSessionService.readyUser(client);
+  }
 
-  // @SubscribeMessage('createGameSession')
-  // create(
-  //   @MessageBody()
-  //   createGameSessionDto: CreateGameSessionDto,
-  // ) {
-  //   return this.gameSessionService.create(createGameSessionDto);
-  // }
+  @SubscribeMessage('cancelReadyUser')
+  cancelReadyUser(@ConnectedSocket() client: Socket) {
+    this.gameSessionService.cancelReadyUser(client);
+  }
 
-  // @SubscribeMessage('findAllGameSession')
-  // findAll() {
-  //   return this.gameSessionService.findAll();
-  // }
-
-  // @SubscribeMessage('findOneGameSession')
-  // findOne(@MessageBody() id: number) {
-  //   return this.gameSessionService.findOne(id);
-  // }
-
-  // @SubscribeMessage('updateGameSession')
-  // update(@MessageBody() updateGameSessionDto: UpdateGameSessionDto) {
-  //   return this.gameSessionService.update(
-  //     updateGameSessionDto.id,
-  //     updateGameSessionDto,
-  //   );
-  // }
-
-  // @SubscribeMessage('removeGameSession')
-  // remove(@MessageBody() id: number) {
-  //   return this.gameSessionService.remove(id);
-  // }
+  @SubscribeMessage('gameConfig')
+  gameConfig(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() gameConfigDto: GameConfigDto,
+  ) {
+    this.gameSessionService.gameConfig(client, gameConfigDto);
+  }
 }

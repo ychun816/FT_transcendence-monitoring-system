@@ -56,25 +56,16 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle(packageInfo.name)
-    .setDescription('Nest.JS applied new version')
+    .setDescription('API documentation for Transcendance')
     .setVersion(packageInfo.version)
     .addCookieAuth(
-      'Authentication',
+      'Authorization',
       {
         type: 'apiKey',
         in: 'cookie',
-        name: 'Authentication',
+        name: 'Authorization',
       },
-      'Authentication',
-    )
-    .addCookieAuth(
-      'RefreshToken',
-      {
-        type: 'apiKey',
-        in: 'cookie',
-        name: 'RefreshToken',
-      },
-      'RefreshToken',
+      'Authorization',
     )
     // .addTag('')
     .build();

@@ -5,7 +5,7 @@ import moment from 'moment';
 @Injectable()
 export class AppService {
   getHello(): string {
-    return 'Hello World!';
+    return 'Transcendance API by lhojoon';
   }
 
   getStatus(): string {

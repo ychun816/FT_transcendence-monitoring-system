@@ -16,6 +16,8 @@ import { IngameStatus } from './enum/ingame-status.enum';
 import { ActiveGameSession } from './entities/active-game-session.entity';
 import { PongData } from './interface/pong-data.interface';
 import { v4 as uuidv4 } from 'uuid';
+import { AccessNotGrantedException } from 'src/errors/exceptions/access-not-granted.exception';
+import { GameConfigDto } from './dto/game-config.dto';
 
 @Injectable()
 export class GameSessionService {
@@ -68,10 +70,7 @@ export class GameSessionService {
             .includes(user.id)
         ) {
           // TODO : reestablish user session, send info to client
-          client.emit('gameSession', {
-            gameHistory: activeGameSession,
-            gametype: activeGameSession.gametype,
-          });
+          client.emit('gameSession', this.omitSensitives(activeGameSession));
           return;
         }
       }
@@ -227,19 +226,51 @@ export class GameSessionService {
     this.logger.debug('Handling game queue...Done!');
   }
 
+  private omitSensitives<T>(
+    activeGameSession: ActiveGameSession<T>,
+  ): Pick<
+    ActiveGameSession<T>,
+    'id' | 'data' | 'status' | 'gametype' | 'tournamentHistory'
+  > {
+    const { id, data, status, gametype, tournamentHistory } = activeGameSession;
+    return { id, data, status, gametype, tournamentHistory };
+  }
+
+  private getTournamentHistory(UserQueue: UserQueue[]): [string, string][][] {
+    const tournamentHistory: [string, string][] = [];
+    let tournamentCache: string[] = [];
+    for (const user of UserQueue) {
+      tournamentCache.push(user.user.id);
+      if (tournamentCache.length === 2) {
+        tournamentHistory.push(tournamentCache as [string, string]);
+        tournamentCache = [];
+      }
+    }
+    return [tournamentHistory];
+  }
+
   // TODO : handle game
   async handlePong(usersList: UserQueue[]) {
     const roomId = uuidv4();
+
+    const room = this.server.of('/').in(roomId);
+
     const activeGameSession: ActiveGameSession<PongData> = {
       id: roomId,
       gametype: GametypeEnum.PONG,
       status: IngameStatus.WAITING_FOR_PLAYERS,
       players: usersList,
+      createdAt: Date.now(),
+      tournamentHistory: this.getTournamentHistory(usersList),
+      room,
       data: {} as PongData,
     };
 
     for (const userQueue of usersList) {
-      userQueue.client.emit('ingame-comm', activeGameSession);
+      userQueue.client.emit(
+        'ingameComm',
+        this.omitSensitives(activeGameSession),
+      );
     }
 
     this.activeGameSessions[activeGameSession.id] = activeGameSession;
@@ -247,8 +278,6 @@ export class GameSessionService {
     for (const user of usersList) {
       await user.client.join(roomId);
     }
-
-    const room = this.server.of('/').in(roomId);
 
     while (true) {
       // Wait all players to enter the game
@@ -261,15 +290,106 @@ export class GameSessionService {
       this.logger.debug(`Room : ${roomId} - Waiting for players to enter...`);
     }
 
-    activeGameSession.status = IngameStatus.IN_PROGRESS;
+    activeGameSession.status = IngameStatus.LOBBY;
 
-    room.emit('ingame-comm', activeGameSession);
+    room.emit('ingameComm', this.omitSensitives(activeGameSession));
+
+    while (true) {
+      // Wait all players to be ready
+      const allReady = activeGameSession.players.every(
+        (userQueue) =>
+          userQueue.client.handshake.auth.user.id in
+            activeGameSession.data.lobbyData &&
+          activeGameSession.data.lobbyData[
+            userQueue.client.handshake.auth.user.id
+          ].ready,
+      );
+
+      if (allReady) {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second
+      this.logger.debug(
+        `Room : ${roomId} - Waiting for players to be ready...`,
+      );
+    }
 
     const gameHistory = await this.gameHistoryService.create({
+      // TODO
       gametype: GametypeEnum.PONG,
       players: usersList.map((userQueue) => userQueue.user.id),
     });
   }
 
-  async handleShoot(usersList: UserQueue[]) {}
+  async handleShoot(usersList: UserQueue[]) {} // TODO
+
+  readyUser(client: Socket) {
+    const user = client.handshake.auth.user as User;
+    const activeGameSession = this.getActiveGameSessionByUserId(user.id);
+
+    if (activeGameSession.status !== IngameStatus.LOBBY) {
+      throw new AccessNotGrantedException();
+    }
+    activeGameSession.data.lobbyData[user.id].ready = true;
+    activeGameSession.room.emit('readyUser', user.id);
+    this.logger.debug(`User ready : ${user.id} - ${user.email}`);
+  }
+
+  cancelReadyUser(client: Socket) {
+    const user = client.handshake.auth.user as User;
+    const activeGameSession = this.getActiveGameSessionByUserId(user.id);
+
+    if (activeGameSession.status !== IngameStatus.LOBBY) {
+      throw new AccessNotGrantedException();
+    }
+    activeGameSession.data.lobbyData[user.id].ready = false;
+    activeGameSession.room.emit('cancelReadyUser', user.id);
+    this.logger.debug(`User cancel ready : ${user.id} - ${user.email}`);
+  }
+
+  getActiveGameSessionById<T>(id: string): ActiveGameSession<T> {
+    const activeGameSession = this.activeGameSessions[id];
+    if (!activeGameSession) {
+      throw new AccessNotGrantedException();
+    }
+    return activeGameSession as ActiveGameSession<T>;
+  }
+
+  getActiveGameSessionByUserId<T>(userId: string): ActiveGameSession<T> {
+    const activeGameSession = Object.values(this.activeGameSessions).find(
+      (session) => session.players.map((user) => user.user.id).includes(userId),
+    );
+    if (!activeGameSession) {
+      throw new AccessNotGrantedException();
+    }
+    return activeGameSession as ActiveGameSession<T>;
+  }
+
+  gameConfig(client: Socket, gameConfigDto: GameConfigDto) {
+    const user = client.handshake.auth.user as User;
+    const activeGameSession = this.getActiveGameSessionByUserId(user.id);
+    if (activeGameSession.status === IngameStatus.LOBBY) {
+      activeGameSession.data.lobbyData[user.id].color = gameConfigDto.color;
+      activeGameSession.data.lobbyData[user.id].map = gameConfigDto.map;
+      activeGameSession.room.emit('gameConfig', {
+        user: user.id,
+        color: gameConfigDto.color,
+        map: gameConfigDto.map,
+      });
+    } else if (activeGameSession.status === IngameStatus.NEXT_ROUND_SELECT) {
+      if (activeGameSession.data.lobbyData[user.id].ready === true) {
+        throw new AccessNotGrantedException();
+      }
+      activeGameSession.data.lobbyData[user.id].color = gameConfigDto.color;
+      activeGameSession.data.lobbyData[user.id].map = gameConfigDto.map;
+      activeGameSession.data.lobbyData[user.id].ready = true;
+      activeGameSession.room.emit('gameConfig', {
+        user: user.id,
+        color: gameConfigDto.color,
+        map: gameConfigDto.map,
+      });
+    } else {
+      throw new AccessNotGrantedException();
+    }
+  }
 }

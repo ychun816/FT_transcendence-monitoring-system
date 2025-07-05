@@ -1,10 +1,30 @@
+import { Server } from 'socket.io';
+import { GametypeEnum } from '../enum/game-type.enum';
 import { IngameStatus } from '../enum/ingame-status.enum';
 import { UserQueue } from './user-queue.entity';
 
 export class ActiveGameSession<TData> {
   id: string;
-  gametype: string;
+  gametype: GametypeEnum;
   status: IngameStatus;
   players: UserQueue[];
-  data: TData;
+  /**
+   * Tournament History
+   *
+   * Depth 0 data is a round : for round number, get length of array
+   * Depth 1 data is a match
+   * Depth 2 data is two id of players
+   */
+  tournamentHistory: [string, string][][];
+  data: TData & {
+    lobbyData: {
+      [key: string]: {
+        color: string;
+        map: string;
+        ready: boolean;
+      };
+    };
+  };
+  createdAt: number;
+  room: ReturnType<Server['in']>;
 }
