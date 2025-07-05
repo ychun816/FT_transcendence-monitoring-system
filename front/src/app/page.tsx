@@ -236,7 +236,7 @@ const PongGame = () => {
   };
   
   useEffect(() => {
-    if (score.player1 === 10 || score.player2 === 10) {
+    if (score.player1 === 5 || score.player2 === 5) {
       setGameOver(true);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -245,7 +245,7 @@ const PongGame = () => {
       const timer = setTimeout(() => {
         setGameStarted(false);
         setShowConfigAfterGame(true);
-      }, 2000);
+      }, 800);
       
       return () => clearTimeout(timer);
     }
@@ -333,14 +333,14 @@ const PongGame = () => {
       
       setBallPosition(prev => {
         if (prev.x < -BALL_SIZE) {
-          setScore(prevScore => ({ ...prevScore, player2: prevScore.player2 + 1 }));
+          setScore(prevScore => ({ ...prevScore, player2: prevScore.player2 + 0.5 }));
           resetBall();
           return { 
             x: GAME_WIDTH / 2 - BALL_SIZE / 2, 
             y: GAME_HEIGHT / 2 - BALL_SIZE / 2 
           };
         } else if (prev.x > GAME_WIDTH) {
-          setScore(prevScore => ({ ...prevScore, player1: prevScore.player1 + 1 }));
+          setScore(prevScore => ({ ...prevScore, player1: prevScore.player1 + 0.5 }));
           resetBall();
           return { 
             x: GAME_WIDTH / 2 - BALL_SIZE / 2, 
@@ -432,7 +432,7 @@ const PongGame = () => {
           <div style={styles.instructions}>
             <p><strong>Joueur 1 (gauche):</strong> Touches W et S</p>
             <p><strong>Joueur 2 (droite):</strong> Flèches ↑ et ↓</p>
-            <p>Premier à 10 points gagne!</p>
+            <p>Premier à 5 points gagne!</p>
           </div>
         </div>
       )}
@@ -444,10 +444,10 @@ const PongGame = () => {
         </div>
       )}
       
-      {(score.player1 === 10 || score.player2 === 10) && (
+      {(score.player1 === 5 || score.player2 === 5) && (
         <div style={styles.winnerScreen}>
           <h2>Partie terminée!</h2>
-          <p>Le joueur {score.player1 === 10 ? 1 : 2} gagne!</p>
+          <p>Le joueur {score.player1 === 5 ? 1 : 2} gagne!</p>
         </div>
       )}
     </div>
