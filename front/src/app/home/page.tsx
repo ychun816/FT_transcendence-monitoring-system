@@ -1,7 +1,7 @@
 "use client";
 
 import {useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react'; // Ajout de useState
+import { useState, useEffect } from 'react'; 
 
 import Image from 'next/image';
 

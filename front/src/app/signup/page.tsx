@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Import ajouté
+import { useRouter } from 'next/navigation'; 
 
 const styles = {
   container: {
@@ -121,7 +121,7 @@ const SignupPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const router = useRouter(); // Hook pour la redirection
+  const router = useRouter(); 
   
   const [balls] = useState(() => {
     return Array.from({ length: 10 }, (_, i) => ({
@@ -148,16 +148,13 @@ const SignupPage = () => {
       return;
     }
     
-    // Simulation d'inscription réussie
     setError('');
     setSuccess('Compte créé avec succès! Redirection...');
     
-    // Sauvegarde dans localStorage
     const userData = { username, email, password };
     localStorage.setItem('userData', JSON.stringify(userData));
     
     setTimeout(() => {
-      // Redirection vers la page de login
       router.push('/login');
     }, 2000);
   };
@@ -224,7 +221,7 @@ const SignupPage = () => {
         </div>
       </form>
       
-      {/* Balles animées en arrière-plan */}
+      {}
       {balls.map(ball => (
         <div
           key={ball.id}

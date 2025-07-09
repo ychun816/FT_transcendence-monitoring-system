@@ -109,28 +109,28 @@ const ConfigScreen = ({ onConfigSubmit }) => {
     leftPaddleColor: '#4cc9f0',
     rightPaddleColor: '#f72585',
     ballColor: '#ffffff',
-    leftPaddleSpeed: 25,
+    leftPaddleSpeed: 23,
     botSpeed: 5,
   });
 
   const colorOptions = [
-    '#4cc9f0', // Cyan
-    '#f72585', // Rose
-    '#7209b7', // Violet
-    '#3a0ca3', // Bleu foncé
-    '#4361ee', // Bleu
-    '#4cc9f0', // Cyan (dupliqué pour garder l'original)
-    '#ffbe0b', // Jaune
-    '#fb5607', // Orange
-    '#ff006e', // Rose vif
-    '#8338ec', // Violet clair
-    '#3a86ff', // Bleu clair
-    '#06d6a0', // Vert
-    '#118ab2', // Bleu-vert
-    '#073b4c', // Bleu marine
-    '#ef476f', // Rouge
-    '#ffd166', // Jaune pâle
-    '#ffffff', // Blanc
+    '#4cc9f0', 
+    '#f72585', 
+    '#7209b7', 
+    '#3a0ca3', 
+    '#4361ee', 
+    '#4cc9f0', 
+    '#ffbe0b', 
+    '#fb5607', 
+    '#ff006e', 
+    '#8338ec', 
+    '#3a86ff', 
+    '#06d6a0', 
+    '#118ab2', 
+    '#073b4c', 
+    '#ef476f', 
+    '#ffd166', 
+    '#ffffff', 
   ];
 
   const handleChange = (e) => {

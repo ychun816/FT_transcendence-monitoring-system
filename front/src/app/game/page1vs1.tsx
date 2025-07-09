@@ -56,14 +56,6 @@ interface Particle {
   speedY?: number;
 }
 
-interface BotController {
-  lastDecisionTime: number;
-  decisionCooldown: number;
-  lastTargetPosition: { x: number; y: number };
-  lastShotTime: number;
-  shotCooldown: number;
-}
-
 const GameLocal = () => {
   const searchParams = useSearchParams();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -159,14 +151,6 @@ const GameLocal = () => {
   const playerParticles = useRef<Particle[]>([]);
   const animationFrameId = useRef<number>(0);
   
-  const botController = useRef<BotController>({
-    lastDecisionTime: 0,
-    decisionCooldown: 200,
-    lastTargetPosition: { x: 0, y: 0 },
-    lastShotTime: 0,
-    shotCooldown: 1000 + Math.random() * 1000
-  });
-
   const darkenColor = (color: string, percent: number): string => {
     const r = parseInt(color.slice(1, 3), 16);
     const g = parseInt(color.slice(3, 5), 16);
@@ -309,25 +293,6 @@ const GameLocal = () => {
     return false;
   };
   
-  const handlePlayerCollisionWithWall = (player: Player) => {
-    const originalX = player.x;
-    const originalY = player.y;
-    
-    player.x = player.prevX;
-    if (!isCollidingWithWall(player)) {
-      return;
-    }
-    
-    player.x = originalX;
-    player.y = player.prevY;
-    if (!isCollidingWithWall(player)) {
-      return;
-    }
-    
-    player.x = player.prevX;
-    player.y = player.prevY;
-  };
-  
   const createFireball = (player: Player) => {
     if (player.lastDirection.dx === 0 && player.lastDirection.dy === 0) {
       player.lastDirection = { 
@@ -383,113 +348,6 @@ const GameLocal = () => {
     }
   };
   
-  const updateBot = () => {
-    const currentTime = Date.now();
-    const bot = player2.current;
-    const target = player1.current;
-    
-    if (currentTime - botController.current.lastDecisionTime < botController.current.decisionCooldown) {
-      return;
-    }
-    
-    botController.current.lastDecisionTime = currentTime;
-    const targetCenter = { 
-      x: target.x + target.width/2, 
-      y: target.y + target.height/2 
-    };
-    botController.current.lastTargetPosition = targetCenter;
-
-    keys.current.ArrowUp = false;
-    keys.current.ArrowDown = false;
-    keys.current.ArrowLeft = false;
-    keys.current.ArrowRight = false;
-    keys.current.Numpad0 = false;
-    keys.current.Numpad1 = false;
-
-    const botCenter = {
-      x: bot.x + bot.width/2,
-      y: bot.y + bot.height/2
-    };
-
-    const dx = targetCenter.x - botCenter.x;
-    const dy = targetCenter.y - botCenter.y;
-    const distance = Math.sqrt(dx*dx + dy*dy);
-    const angle = Math.atan2(dy, dx);
-    
-    let avoidVector = { x: 0, y: 0 };
-    fireballs.current.forEach(fb => {
-      if (fb.player === player1.current) {
-        const fbDistX = fb.x - botCenter.x;
-        const fbDistY = fb.y - botCenter.y;
-        const fbDistance = Math.sqrt(fbDistX*fbDistX + fbDistY*fbDistY);
-        
-        if (fbDistance < 300) {
-          avoidVector.x -= fbDistX / fbDistance;
-          avoidVector.y -= fbDistY / fbDistance;
-        }
-      }
-    });
-
-    if (Math.abs(avoidVector.x) > 0.5 || Math.abs(avoidVector.y) > 0.5) {
-      if (avoidVector.x < -0.5) keys.current.ArrowLeft = true;
-      if (avoidVector.x > 0.5) keys.current.ArrowRight = true;
-      if (avoidVector.y < -0.5) keys.current.ArrowUp = true;
-      if (avoidVector.y > 0.5) keys.current.ArrowDown = true;
-      
-      if (bot.canDash && !bot.isDashing && currentTime - bot.lastDashTime > bot.dashCooldown) {
-        keys.current.Numpad1 = true;
-      }
-    } 
-    else {
-      const optimalDistance = 400;
-      const minDistance = 250;
-      const maxDistance = 500;
-      
-      if (distance < minDistance) {
-        keys.current.ArrowLeft = dx < 0 ? false : true;
-        keys.current.ArrowRight = dx < 0 ? true : false;
-        keys.current.ArrowUp = dy < 0 ? false : true;
-        keys.current.ArrowDown = dy < 0 ? true : false;
-      } else if (distance > maxDistance) {
-        keys.current.ArrowLeft = dx < 0 ? true : false;
-        keys.current.ArrowRight = dx < 0 ? false : true;
-        keys.current.ArrowUp = dy < 0 ? true : false;
-        keys.current.ArrowDown = dy < 0 ? false : true;
-      } else {
-        if (Math.random() > 0.5) {
-          keys.current.ArrowLeft = Math.random() > 0.5;
-          keys.current.ArrowRight = !keys.current.ArrowLeft;
-        } else {
-          keys.current.ArrowUp = Math.random() > 0.5;
-          keys.current.ArrowDown = !keys.current.ArrowUp;
-        }
-      }
-      
-      if (Math.abs(distance - optimalDistance) > 150 && 
-          bot.canDash && !bot.isDashing && 
-          currentTime - bot.lastDashTime > bot.dashCooldown) {
-        keys.current.Numpad1 = true;
-      }
-      
-      bot.lastDirection = { 
-        dx: Math.cos(angle), 
-        dy: Math.sin(angle) 
-      };
-      
-      const aimThreshold = 0.85;
-      const aimDotProduct = 
-        (Math.cos(angle) * bot.lastDirection.dx) + 
-        (Math.sin(angle) * bot.lastDirection.dy);
-      
-      if (aimDotProduct > aimThreshold && 
-          currentTime - botController.current.lastShotTime > botController.current.shotCooldown) {
-        keys.current.Numpad0 = true;
-        botController.current.lastShotTime = currentTime;
-        botController.current.shotCooldown = 700;
-      }
-    }
-  };
-  
   const update = () => {
     const currentTime = Date.now();
     const p1 = player1.current;
@@ -499,8 +357,6 @@ const GameLocal = () => {
     p1.prevY = p1.y;
     p2.prevX = p2.x;
     p2.prevY = p2.y;
-  
-    updateBot();
   
     if (keys.current.KeyV && p1.canDash && !p1.isDashing && 
         currentTime - p1.lastDashTime > p1.dashCooldown) {
@@ -595,11 +451,13 @@ const GameLocal = () => {
     }
     
     if (isCollidingWithWall(p1)) {
-      handlePlayerCollisionWithWall(p1);
+      p1.x = p1.prevX;
+      p1.y = p1.prevY;
     }
     
     if (isCollidingWithWall(p2)) {
-      handlePlayerCollisionWithWall(p2);
+      p2.x = p2.prevX;
+      p2.y = p2.prevY;
     }
     
     checkPlayerCollision();
@@ -707,18 +565,13 @@ const GameLocal = () => {
     
     ctx.clearRect(0, 0, 1700, 750);
     
-    ctx.fillStyle = '#555';
+    ctx.fillStyle = '#888';
     walls.current.forEach(wall => {
       ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
       
-      ctx.strokeStyle = '#333';
+      ctx.strokeStyle = '#666';
       ctx.lineWidth = 3;
       ctx.strokeRect(wall.x, wall.y, wall.width, wall.height);
-      
-      if (mapId === 'map2' && wall.width === 100 && wall.height === 300) {
-        ctx.fillStyle = '#444';
-        ctx.fillRect(wall.x + 10, wall.y + 10, wall.width - 20, wall.height - 20);
-      }
     });
     
     playerParticles.current.forEach(p => {
@@ -846,6 +699,7 @@ const GameLocal = () => {
         zIndex: 2,
         gap: '10px',
         flexWrap: 'wrap'
+        
       }}>
         <div style={{ 
           background: 'rgba(0, 0, 0, 0.6)',
@@ -876,6 +730,7 @@ const GameLocal = () => {
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
           border: '2px solid rgba(255, 200, 0, 0.3)',
           margin: '10px'
+          
         }}>
           <div style={{ 
             display: 'flex', 
@@ -931,7 +786,7 @@ const GameLocal = () => {
               fontSize: '1.3rem',
               fontWeight: 'bold',
               color: player2Color
-            }}>Joueur 2 (BOT)</div>
+            }}>Joueur 2</div>
             <div style={{ 
               fontSize: '1.3rem',
               fontWeight: 'bold',
@@ -974,7 +829,9 @@ const GameLocal = () => {
           margin: '10px'
         }}>
           <p>
-            <span style={{ color: player2Color }}>BOT</span>
+            <span style={{ color: player2Color }}>↑ ↓ ← →</span> + 
+            <span style={{ color: player2Color }}> 0</span> pour tirer + 
+            <span style={{ color: player2Color }}> 1</span> pour dash
           </p>
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Import ajouté
+import { useRouter } from 'next/navigation'; 
 
 const styles = {
   container: {
@@ -129,11 +129,8 @@ const LoginPage = () => {
       return;
     }
     
-    // Simulation de connexion réussie
     console.log('Connexion réussie avec:', { email, password });
     setError('');
-    // Redirection vers une autre page après connexion
-    // window.location.href = '/dashboard';
   };
 
   return (

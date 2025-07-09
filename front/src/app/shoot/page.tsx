@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import GameCustomisation from '../GameCustomisation';
-import GameLocal from '../game/page';
+import GameLocal from '../game/page1vs1';
 import { useSearchParams } from 'next/navigation';
 
 export default function HomePage() {
