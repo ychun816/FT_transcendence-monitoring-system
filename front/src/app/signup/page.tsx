@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation'; 
+
 
 const styles = {
   container: {
@@ -114,6 +115,7 @@ const styles = {
   }
 };
 
+
 const SignupPage = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -123,17 +125,33 @@ const SignupPage = () => {
   const [success, setSuccess] = useState('');
   const router = useRouter(); 
   
-  const [balls] = useState(() => {
-    return Array.from({ length: 10 }, (_, i) => ({
+  const { balls, keyframes } = useMemo(() => {
+    const ballsData = Array.from({ length: 10 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
       size: Math.random() * 40 + 20,
-      speedX: (Math.random() - 0.5) * 0.5,
-      speedY: (Math.random() - 0.5) * 0.5,
       color: i % 2 === 0 ? '#4cc9f0' : '#f72585',
+      moveX: Math.random() * 200 - 100,
+      moveY: Math.random() * 200 - 100,
+      duration: 15 + Math.random() * 20
     }));
-  });
+
+    let keyframesContent = '';
+    ballsData.forEach(ball => {
+      keyframesContent += `
+        @keyframes move${ball.id} {
+          0% { transform: translate(0, 0); }
+          100% { transform: translate(${ball.moveX}px, ${ball.moveY}px); }
+        }
+      `;
+    });
+
+    return {
+      balls: ballsData,
+      keyframes: keyframesContent
+    };
+  }, []);
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,8 +249,8 @@ const SignupPage = () => {
             top: `${ball.y}%`,
             width: ball.size,
             height: ball.size,
-            backgroundColor: `rgba(${ball.color === '#4cc9f0' ? '76, 201, 240' : '247, 37, 133'}, ${0.2 + Math.random() * 0.3})`,
-            animation: `move${ball.id} ${15 + Math.random() * 20}s infinite alternate ease-in-out`,
+            backgroundColor: `rgba(${ball.color === '#4cc9f0' ? '76, 201, 240' : '247, 37, 133'}, ${0.2 + 0.5 * 0.3})`,
+            animation: `move${ball.id} ${ball.duration}s infinite alternate ease-in-out`,
           }}
         />
       ))}
@@ -240,48 +258,57 @@ const SignupPage = () => {
       <style jsx global>{`
         @keyframes float {
           0% { transform: translate(0, 0); }
-          100% { transform: translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px); }
+          100% { transform: translate(50px, 50px); }
+        }
+        ${keyframes}
+      `}</style>
+
+      
+      <style jsx>{keyframes}</style>
+      
+      <style jsx global>{`
+        @keyframes float {
+          0% { transform: translate(0, 0); }
+          100% { transform: translate(40px, 20px); }
         }
         
         @keyframes move0 {
           0% { transform: translate(0, 0); }
-          100% { transform: translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px); }
+          100% { transform: translate(50px, 50px); }
         }
         @keyframes move1 {
           0% { transform: translate(0, 0); }
-          100% { transform: translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px); }
+          100% { transform: translate(60px, 30px); }
         }
         @keyframes move2 {
           0% { transform: translate(0, 0); }
-          100% { transform: translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px); }
+          100% { transform: translate(70px, 40px); }
         }
         @keyframes move3 {
           0% { transform: translate(0, 0); }
-          100% { transform: translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px); }
+          100% { transform: translate(50px, 50px); }
         }
         @keyframes move4 {
           0% { transform: translate(0, 0); }
-          100% { transform: translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px); }
-        }
+          100% { transform: translate(60px, 30px); }
         @keyframes move5 {
           0% { transform: translate(0, 0); }
-          100% { transform: translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px); }
+          100% { transform: translate(70px, 40px); }
         }
         @keyframes move6 {
           0% { transform: translate(0, 0); }
-          100% { transform: translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px); }
-        }
+          100% { transform: translate(80px, 50px); }
         @keyframes move7 {
           0% { transform: translate(0, 0); }
-          100% { transform: translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px); }
+          100% { transform: translate(40px, 34px); }
         }
         @keyframes move8 {
           0% { transform: translate(0, 0); }
-          100% { transform: translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px); }
+          100% { transform: translate(50px, 50px); }
         }
         @keyframes move9 {
           0% { transform: translate(0, 0); }
-          100% { transform: translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px); }
+          100% { transform: translate(60px, 30px); }
         }
       `}</style>
     </div>

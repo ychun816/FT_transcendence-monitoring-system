@@ -102,6 +102,32 @@ export default function HomePage() {
 
   return (
     <div style={styles.container}>
+      {/* Bouton Settings en haut à gauche */}
+      <button 
+        style={{
+          position: 'absolute',
+          top: '20px',
+          left: '20px',
+          zIndex: 10,
+          background: 'transparent',
+          border: 'none',
+          color: '#4cc9f0',
+          fontSize: '2rem',
+          cursor: 'pointer',
+          transition: 'transform 0.3s ease, color 0.3s ease',
+        }}
+        onClick={() => router.push('/settings')}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.1)';
+          e.currentTarget.style.color = '#f72585';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.color = '#4cc9f0';
+        }}
+      >
+        ⚙️
+      </button>
       <h1 style={styles.title}>Sélectionnez un jeu</h1>
       
       <div style={styles.gamesContainer}>
