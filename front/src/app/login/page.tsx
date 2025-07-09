@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation'; 
 
@@ -110,16 +110,32 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [balls] = useState(() => {
-    return Array.from({ length: 8 }, (_, i) => ({
+  
+  const { balls, keyframes } = useMemo(() => {
+    const ballsData = Array.from({ length: 8 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
       size: Math.random() * 40 + 20,
-      speedX: (Math.random() - 0.5) * 2,
-      speedY: (Math.random() - 0.5) * 2,
+      moveX: Math.random() * 100,
+      moveY: Math.random() * 100,
+      duration: 10 + Math.random() * 20
     }));
-  });
+
+    let keyframesContent = '';
+    ballsData.forEach(ball => {
+      keyframesContent += `
+        @keyframes move${ball.id} {
+          100% { transform: translate(${ball.moveX}px, ${ball.moveY}px); }
+        }
+      `;
+    });
+
+    return {
+      balls: ballsData,
+      keyframes: keyframesContent
+    };
+  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,7 +188,6 @@ const LoginPage = () => {
         </div>
       </form>
       
-      {/* Balles animées en arrière-plan */}
       {balls.map(ball => (
         <div
           key={ball.id}
@@ -182,36 +197,36 @@ const LoginPage = () => {
             top: `${ball.y}%`,
             width: ball.size,
             height: ball.size,
-            backgroundColor: `rgba(247, 37, 133, ${0.2 + Math.random() * 0.3})`,
-            animation: `move${ball.id} ${10 + Math.random() * 20}s infinite alternate`,
+            backgroundColor: `rgba(247, 37, 133, ${0.2 * 0.3})`,
+            animation: `move${ball.id} ${ball.duration}s infinite alternate`,
           }}
         />
       ))}
       
       <style jsx>{`
         @keyframes move0 {
-          100% { transform: translate(${Math.random() * 100}px, ${Math.random() * 100}px); }
+          100% { transform: translate(40px, 20px); }
         }
         @keyframes move1 {
-          100% { transform: translate(${Math.random() * 100}px, ${Math.random() * 100}px); }
+          100% { transform: translate(50px, 50px); }
         }
         @keyframes move2 {
-          100% { transform: translate(${Math.random() * 100}px, ${Math.random() * 100}px); }
+          100% { transform: translate(60px, 30px); }
         }
         @keyframes move3 {
-          100% { transform: translate(${Math.random() * 100}px, ${Math.random() * 100}px); }
+          100% { transform: translate(70px, 40px); }
         }
         @keyframes move4 {
-          100% { transform: translate(${Math.random() * 100}px, ${Math.random() * 100}px); }
+          100% { transform: translate(80px, 50px); }
         }
         @keyframes move5 {
-          100% { transform: translate(${Math.random() * 100}px, ${Math.random() * 100}px); }
+          100% { transform: translate(90px, 60px); }
         }
         @keyframes move6 {
-          100% { transform: translate(${Math.random() * 100}px, ${Math.random() * 100}px); }
+          100% { transform: translate(100px, 70px); }
         }
         @keyframes move7 {
-          100% { transform: translate(${Math.random() * 100}px, ${Math.random() * 100}px); }
+          100% { transform: translate(40px, 20px); }
         }
       `}</style>
     </div>

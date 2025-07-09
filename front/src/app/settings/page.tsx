@@ -1,9 +1,7 @@
 "use client";
-//yarn add react-icons
-
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiUser, FiMail, FiLock, FiUsers, FiUserPlus, FiSettings, FiCheck, FiX } from 'react-icons/fi';
+import { FiUser, FiMail, FiLock, FiUsers, FiUserPlus, FiSettings, FiCheck, FiX, FiBarChart2 } from 'react-icons/fi';
 
 const ProfilePage = () => {
   const router = useRouter();
@@ -33,6 +31,25 @@ const ProfilePage = () => {
     { id: 1, name: 'Camille Rousseau', avatar: null, mutualFriends: 2 },
     { id: 2, name: 'Lucas Bernard', avatar: null, mutualFriends: 4 },
   ]);
+
+  const [stats, setStats] = useState({
+    totalGames: 42,
+    winRate: 65,
+    games: [
+      { name: 'Pong', played: 20, won: 15 },
+      { name: 'Shoot', played: 22, won: 12 }
+    ],
+    history: [
+      { id: 1, game: 'Pong', result: 'win', date: '2024-05-01', opponent: 'Alex Martin' },
+      { id: 2, game: 'Shoot', result: 'loss', date: '2024-05-02', opponent: 'Sophie Dubois' },
+      { id: 3, game: 'Pong', result: 'win', date: '2024-05-03', opponent: 'Thomas Edison' },
+      { id: 4, game: 'Shoot', result: 'win', date: '2024-05-04', opponent: 'Jean Dupont' },
+      { id: 5, game: 'Pong', result: 'loss', date: '2024-05-05', opponent: 'Marie Curie' },
+      { id: 6, game: 'Shoot', result: 'win', date: '2024-05-06', opponent: 'Camille Rousseau' },
+      { id: 7, game: 'Pong', result: 'loss', date: '2024-05-07', opponent: 'Lucas Bernard' },
+      { id: 8, game: 'Shoot', result: 'loss', date: '2024-05-08', opponent: 'Alex Martin' },
+    ]
+  });
 
   const handleEmailChange = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,7 +158,7 @@ const ProfilePage = () => {
             Mon Profil
           </h1>
           <button 
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/home')}
             style={{
               ...buttonStyle,
               background: 'rgba(247, 37, 133, 0.2)',
@@ -194,6 +211,16 @@ const ProfilePage = () => {
           >
             <FiUsers /> Amis
           </button>
+          <button 
+            style={{ 
+              ...buttonStyle, 
+              background: activeTab === 'stats' ? 'rgba(240, 184, 76, 0.3)' : 'rgba(240, 184, 76, 0.1)',
+              padding: '10px 20px',
+            }}
+            onClick={() => setActiveTab('stats')}
+          >
+            <FiBarChart2 /> Statistiques
+          </button>
         </div>
 
         {/* Section Profil */}
@@ -216,13 +243,6 @@ const ProfilePage = () => {
                   <label style={{ display: 'block', marginBottom: '8px', color: '#4cc9f0' }}>Adresse email</label>
                   <div style={{ padding: '12px', background: 'rgba(22, 33, 62, 0.5)', borderRadius: '8px' }}>
                     {email}
-                  </div>
-                </div>
-                
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', color: '#4cc9f0' }}>Date d'inscription</label>
-                  <div style={{ padding: '12px', background: 'rgba(22, 33, 62, 0.5)', borderRadius: '8px' }}>
-                    15 janvier 2023
                   </div>
                 </div>
               </div>
@@ -514,73 +534,180 @@ const ProfilePage = () => {
                             width: '35px',
                             height: '35px',
                             display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <FiX style={{ color: '#f72585' }} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {/* Liste d'amis */}
-            <div>
-              <h3 style={{ fontSize: '1.4rem', marginBottom: '15px' }}>Mes amis ({friends.length})</h3>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '15px' }}>
-                {friends.map(friend => (
-                  <div key={friend.id} style={{ 
-                    background: 'rgba(22, 33, 62, 0.5)', 
-                    padding: '15px', 
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '15px',
-                    position: 'relative'
-                  }}>
-                    <div style={{ 
-                      width: '40px', 
-                      height: '40px', 
-                      borderRadius: '50%', 
-                      background: 'linear-gradient(45deg, #4cc9f0, #4361ee)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.2rem',
-                    }}>
-                      {friend.name.charAt(0)}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 'bold' }}>{friend.name}</div>
-                      <div style={{ fontSize: '0.9rem', color: friend.online ? '#4cf06e' : '#aaa' }}>
-                        {friend.online ? 'En ligne' : 'Hors ligne'}
-                      </div>
-                    </div>
-                    {friend.online && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '15px',
-                        right: '15px',
-                        width: '10px',
-                        height: '10px',
-                        borderRadius: '50%',
-                        background: '#4cf06e',
-                        boxShadow: '0 0 10px rgba(76, 240, 110, 0.7)'
-                      }} />
-                    )}
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <FiX style={{ color: '#f72585' }} />
+                    </button>
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Liste d'amis */}
+        <div>
+          <h3 style={{ fontSize: '1.4rem', marginBottom: '15px' }}>Mes amis ({friends.length})</h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '15px' }}>
+            {friends.map(friend => (
+              <div key={friend.id} style={{ 
+                background: 'rgba(22, 33, 62, 0.5)', 
+                padding: '15px', 
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '15px',
+                position: 'relative'
+              }}>
+                <div style={{ 
+                  width: '40px', 
+                  height: '40px', 
+                  borderRadius: '50%', 
+                  background: 'linear-gradient(45deg, #4cc9f0, #4361ee)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem',
+                }}>
+                  {friend.name.charAt(0)}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 'bold' }}>{friend.name}</div>
+                  <div style={{ fontSize: '0.9rem', color: friend.online ? '#4cf06e' : '#aaa' }}>
+                    {friend.online ? 'En ligne' : 'Hors ligne'}
+                  </div>
+                </div>
+                {friend.online && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '15px',
+                    right: '15px',
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    background: '#4cf06e',
+                    boxShadow: '0 0 10px rgba(76, 240, 110, 0.7)'
+                  }} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Section Statistiques */}
+    {activeTab === 'stats' && (
+      <div style={cardStyle}>
+        <h2 style={{ fontSize: '1.8rem', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <FiBarChart2 /> Statistiques de jeu
+        </h2>
+        
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+          gap: '25px',
+          marginBottom: '30px'
+        }}>
+          {/* Carte statistiques globales */}
+          <div style={{ 
+            background: 'rgba(22, 33, 62, 0.5)', 
+            borderRadius: '15px', 
+            padding: '20px',
+            textAlign: 'center'
+          }}>
+            <h3 style={{ fontSize: '1.4rem', marginBottom: '15px', color: '#4cc9f0' }}>
+              Performances globales
+            </h3>
+            
+            <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#f0b84c', margin: '20px 0' }}>
+              {stats.winRate}%
+            </div>
+            <div style={{ color: '#aaa', marginBottom: '20px' }}>Taux de victoire</div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '25px' }}>
+              <div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#4cc9f0' }}>
+                  {stats.totalGames}
+                </div>
+                <div style={{ color: '#aaa' }}>Parties jouées</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#4cf06e' }}>
+                  {Math.round(stats.totalGames * stats.winRate / 100)}
+                </div>
+                <div style={{ color: '#aaa' }}>Victoires</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#f72585' }}>
+                  {stats.totalGames - Math.round(stats.totalGames * stats.winRate / 100)}
+                </div>
+                <div style={{ color: '#aaa' }}>Défaites</div>
               </div>
             </div>
           </div>
-        )}
+          
+          {/* Carte détails par jeu */}
+          <div style={{ 
+            background: 'rgba(22, 33, 62, 0.5)', 
+            borderRadius: '15px', 
+            padding: '20px'
+          }}>
+            <h3 style={{ fontSize: '1.4rem', marginBottom: '20px', color: '#4cc9f0' }}>
+              Détails par jeu
+            </h3>
+            
+            {stats.games.map((game, index) => {
+              const winRate = game.played ? Math.round((game.won / game.played) * 100) : 0;
+              return (
+                <div key={index} style={{ marginBottom: '25px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                    <span style={{ fontWeight: 'bold' }}>{game.name}</span>
+                    <span style={{ color: winRate >= 50 ? '#4cf06e' : '#f72585' }}>
+                      {winRate}% de victoires
+                    </span>
+                  </div>
+                  
+                  <div style={{ 
+                    height: '10px', 
+                    width: '100%', 
+                    background: 'rgba(76, 201, 240, 0.1)', 
+                    borderRadius: '5px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      height: '100%', 
+                      width: `${winRate}%`, 
+                      background: 'linear-gradient(90deg, #4cc9f0, #4361ee)',
+                      borderRadius: '5px'
+                    }} />
+                  </div>
+                  
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    fontSize: '0.9rem',
+                    color: '#aaa',
+                    marginTop: '5px'
+                  }}>
+                    <div>{game.played} parties</div>
+                    <div>{game.won} victoires</div>
+                    <div>{game.played - game.won} défaites</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
       </div>
-    </div>
+    )}
+  </div>
+</div>
   );
 };
 
