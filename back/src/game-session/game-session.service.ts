@@ -360,13 +360,13 @@ export class GameSessionService {
           activeGameSession.data = pongData;
         } else if (activeGameSession.gametype === GametypeEnum.SHOOT) {
           const shootData: ShootData = {
-            balls: [],
             player1: {
               user: users[0].user,
               score: 0,
               x: 150,
               y: 350,
               orentation: OrientationEnum.RIGHT,
+              balls: [],
             },
             player2: {
               user: users[1].user,
@@ -374,6 +374,7 @@ export class GameSessionService {
               x: 1475,
               y: 350,
               orentation: OrientationEnum.LEFT,
+              balls: [],
             },
           };
           activeGameSession.data = shootData;
@@ -549,10 +550,12 @@ export class GameSessionService {
     }
 
     activeGameSession.winners.push(
-      activeGameSession.players.find((userQueue) => userQueue.user.id === data),
+      activeGameSession.players.find(
+        (userQueue) => userQueue.user.id === data,
+      ) as UserQueue,
     );
 
-    activeGameSession.status = IngameStatus.NEXT_ROUND_SELECT;
+    activeGameSession.status = IngameStatus.INTERRUPTED;
 
     activeGameSession.room.emit('gamedataWinner', data);
   }
