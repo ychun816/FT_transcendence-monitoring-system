@@ -92,4 +92,12 @@ export class GameSessionGateway
   ) {
     this.gameSessionService.gamedataShoot(client, data);
   }
+
+  @SubscribeMessage('gamedata-winner')
+  gamedataWinner(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: string,
+  ) {
+    this.gameSessionService.gamedataWinner(client, data);
+  }
 }

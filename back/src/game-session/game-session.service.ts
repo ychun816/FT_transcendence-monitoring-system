@@ -20,6 +20,8 @@ import { AccessNotGrantedException } from 'src/errors/exceptions/access-not-gran
 import { GameConfigDto } from './dto/game-config.dto';
 import { ShootData } from './interface/shoot-data.interface';
 import { OrientationEnum } from './enum/orientation.enum';
+import { GamedataPongDto } from './dto/gamedata-pong.dto';
+import { GamedataShootDto } from './dto/gamedata-shoot.dto';
 
 @Injectable()
 export class GameSessionService {
@@ -153,12 +155,12 @@ export class GameSessionService {
         this.logger.debug(
           `Game : ${gametype} - Creating room for PONG players: ${userQueue.length}`,
         );
-        this.handlePong(userQueue); // TODO : How to handle promise?
+        this.handleGame(userQueue); // TODO : How to handle promise?
       } else {
         this.logger.debug(
           `Game : ${gametype} - Creating room for SHOOT players: ${userQueue.length}`,
         );
-        this.handleShoot(userQueue); // TODO : How to handle promise?
+        this.handleGame(userQueue); // TODO : How to handle promise?
       }
     };
     const timeDiffMs =
@@ -268,8 +270,8 @@ export class GameSessionService {
       data: null,
       lobbyData: {},
       winners: [],
-      roundNumber: 0,
-      currentRound: 1,
+      classNumber: 0,
+      currentClass: 1,
       mapVoteData: [],
     };
 
@@ -306,10 +308,9 @@ export class GameSessionService {
       const allReady = activeGameSession.players.every(
         (userQueue) =>
           userQueue.client.handshake.auth.user.id in
-            activeGameSession.data.lobbyData &&
-          activeGameSession.data.lobbyData[
-            userQueue.client.handshake.auth.user.id
-          ].ready,
+            activeGameSession.lobbyData &&
+          activeGameSession.lobbyData[userQueue.client.handshake.auth.user.id]
+            .ready,
       );
 
       if (allReady) {
@@ -325,16 +326,12 @@ export class GameSessionService {
       `Room : ${roomId} - All players are ready, starting game...`,
     );
 
-    activeGameSession.roundNumber = Math.log2(activeGameSession.players.length);
+    activeGameSession.classNumber = Math.log2(activeGameSession.players.length);
 
-    while (activeGameSession.currentRound <= activeGameSession.roundNumber) {
+    while (activeGameSession.currentClass <= activeGameSession.classNumber) {
       this.logger.debug(
-        `Room : ${roomId} - Starting round ${activeGameSession.currentRound}/${activeGameSession.roundNumber}`,
+        `Room : ${roomId} - Starting class ${activeGameSession.currentClass}/${activeGameSession.classNumber}`,
       );
-
-      activeGameSession.status = IngameStatus.IN_PROGRESS;
-
-      room.emit('ingameComm', this.omitSensitives(activeGameSession));
 
       let userTemp: UserQueue | null = null;
       for (const userQueue of activeGameSession.players) {
@@ -382,6 +379,10 @@ export class GameSessionService {
           activeGameSession.data = shootData;
         }
 
+        activeGameSession.status = IngameStatus.IN_PROGRESS;
+
+        room.emit('ingameComm', this.omitSensitives(activeGameSession));
+
         while (activeGameSession.status === IngameStatus.IN_PROGRESS) {
           room.emit('gamedata', activeGameSession.data);
         }
@@ -392,20 +393,15 @@ export class GameSessionService {
       }
 
       this.logger.debug(
-        `Room : ${roomId} - Round ${activeGameSession.currentRound}/${activeGameSession.roundNumber} finished`,
+        `Room : ${roomId} - Class ${activeGameSession.currentClass}/${activeGameSession.classNumber} finished`,
       );
 
-      // TODO
-      // Simulate winners for the round
-      // const roundWinners = activeGameSession.players.slice(0, 2);
-      // winners.push(...roundWinners);
-      // activeGameSession.data.roundWinners = roundWinners.map(
-      //   (userQueue) => userQueue.user.id,
-      // );
-      // room.emit('roundWinners', activeGameSession.data.roundWinners);
-
-      activeGameSession.currentRound++;
+      activeGameSession.currentClass++;
     }
+
+    activeGameSession.status = IngameStatus.TERMINATED;
+
+    room.emit('ingameComm', this.omitSensitives(activeGameSession));
 
     const gameHistory = await this.gameHistoryService.create({
       // TODO
@@ -414,8 +410,6 @@ export class GameSessionService {
     });
   }
 
-  async handleShoot(usersList: UserQueue[]) {} // TODO
-
   readyUser(client: Socket) {
     const user = client.handshake.auth.user as User;
     const activeGameSession = this.getActiveGameSessionByUserId(user.id);
@@ -423,7 +417,7 @@ export class GameSessionService {
     if (activeGameSession.status !== IngameStatus.LOBBY) {
       throw new AccessNotGrantedException();
     }
-    activeGameSession.data.lobbyData[user.id].ready = true;
+    activeGameSession.lobbyData[user.id].ready = true;
     activeGameSession.room.emit('readyUser', user.id);
     this.logger.debug(`User ready : ${user.id} - ${user.email}`);
   }
@@ -435,7 +429,7 @@ export class GameSessionService {
     if (activeGameSession.status !== IngameStatus.LOBBY) {
       throw new AccessNotGrantedException();
     }
-    activeGameSession.data.lobbyData[user.id].ready = false;
+    activeGameSession.lobbyData[user.id].ready = false;
     activeGameSession.room.emit('cancelReadyUser', user.id);
     this.logger.debug(`User cancel ready : ${user.id} - ${user.email}`);
   }
@@ -484,5 +478,82 @@ export class GameSessionService {
     } else {
       throw new AccessNotGrantedException();
     }
+  }
+
+  gamedataPong(client: Socket, data: GamedataPongDto) {
+    const user = client.handshake.auth.user as User;
+    const activeGameSession = this.getActiveGameSessionByUserId<PongData>(
+      user.id,
+    );
+
+    if (activeGameSession.gametype !== GametypeEnum.PONG) {
+      throw new AccessNotGrantedException();
+    }
+
+    if (activeGameSession.status !== IngameStatus.IN_PROGRESS) {
+      throw new AccessNotGrantedException();
+    }
+
+    if (activeGameSession.data?.player1.user.id === user.id) {
+      activeGameSession.data.player1.y = data.y;
+    } else if (activeGameSession.data?.player2.user.id === user.id) {
+      activeGameSession.data.player2.y = data.y;
+    } else {
+      throw new AccessNotGrantedException();
+    }
+  }
+
+  gamedataShoot(client: Socket, data: GamedataShootDto) {
+    const user = client.handshake.auth.user as User;
+    const activeGameSession = this.getActiveGameSessionByUserId<ShootData>(
+      user.id,
+    );
+
+    if (activeGameSession.gametype !== GametypeEnum.SHOOT) {
+      throw new AccessNotGrantedException();
+    }
+
+    if (activeGameSession.status !== IngameStatus.IN_PROGRESS) {
+      throw new AccessNotGrantedException();
+    }
+
+    if (activeGameSession.data?.player1.user.id === user.id) {
+      activeGameSession.data.player1.x = data.x;
+      activeGameSession.data.player1.y = data.y;
+      activeGameSession.data.player1.orentation = data.orientation;
+      activeGameSession.data.player1.balls = data.balls;
+    } else if (activeGameSession.data?.player2.user.id === user.id) {
+      activeGameSession.data.player2.x = data.x;
+      activeGameSession.data.player2.y = data.y;
+      activeGameSession.data.player2.orentation = data.orientation;
+      activeGameSession.data.player2.balls = data.balls;
+    } else {
+      throw new AccessNotGrantedException();
+    }
+  }
+
+  gamedataWinner(client: Socket, data: string) {
+    const user = client.handshake.auth.user as User;
+    const activeGameSession = this.getActiveGameSessionByUserId(user.id);
+
+    if (activeGameSession.status !== IngameStatus.IN_PROGRESS) {
+      throw new AccessNotGrantedException();
+    }
+
+    if (
+      !activeGameSession.players
+        .map((userQueue) => userQueue.user.id)
+        .includes(data)
+    ) {
+      throw new AccessNotGrantedException();
+    }
+
+    activeGameSession.winners.push(
+      activeGameSession.players.find((userQueue) => userQueue.user.id === data),
+    );
+
+    activeGameSession.status = IngameStatus.NEXT_ROUND_SELECT;
+
+    activeGameSession.room.emit('gamedataWinner', data);
   }
 }

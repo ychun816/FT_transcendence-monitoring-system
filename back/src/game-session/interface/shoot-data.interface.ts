@@ -8,6 +8,10 @@ export interface ShootData {
     x: number;
     y: number;
     orentation: OrientationEnum;
+    balls: {
+      x: number;
+      y: number;
+    }[];
   };
   player2: {
     user: User;
@@ -15,9 +19,9 @@ export interface ShootData {
     x: number;
     y: number;
     orentation: OrientationEnum;
+    balls: {
+      x: number;
+      y: number;
+    }[];
   };
-  balls: {
-    x: number;
-    y: number;
-  }[];
 }

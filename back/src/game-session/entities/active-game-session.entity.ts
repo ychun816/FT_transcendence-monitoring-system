@@ -17,7 +17,7 @@ export class ActiveGameSession<TData> {
    */
   tournamentHistory: [string, string][][];
 
-  roundNumber: number;
+  classNumber: number;
   winners: UserQueue[];
 
   data: TData | null;
@@ -30,6 +30,6 @@ export class ActiveGameSession<TData> {
   };
   createdAt: number;
   room: ReturnType<Server['in']>;
-  currentRound: number;
+  currentClass: number;
   mapVoteData: string[];
 }
