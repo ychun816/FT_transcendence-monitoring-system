@@ -18,6 +18,8 @@ import { PongData } from './interface/pong-data.interface';
 import { v4 as uuidv4 } from 'uuid';
 import { AccessNotGrantedException } from 'src/errors/exceptions/access-not-granted.exception';
 import { GameConfigDto } from './dto/game-config.dto';
+import { ShootData } from './interface/shoot-data.interface';
+import { OrientationEnum } from './enum/orientation.enum';
 
 @Injectable()
 export class GameSessionService {
@@ -250,12 +252,12 @@ export class GameSessionService {
   }
 
   // TODO : handle game
-  async handlePong(usersList: UserQueue[]) {
+  async handleGame(usersList: UserQueue[]) {
     const roomId = uuidv4();
 
     const room = this.server.of('/').in(roomId);
 
-    const activeGameSession: ActiveGameSession<PongData> = {
+    const activeGameSession: ActiveGameSession<unknown> = {
       id: roomId,
       gametype: GametypeEnum.PONG,
       status: IngameStatus.WAITING_FOR_PLAYERS,
@@ -263,7 +265,12 @@ export class GameSessionService {
       createdAt: Date.now(),
       tournamentHistory: this.getTournamentHistory(usersList),
       room,
-      data: {} as PongData,
+      data: null,
+      lobbyData: {},
+      winners: [],
+      roundNumber: 0,
+      currentRound: 1,
+      mapVoteData: [],
     };
 
     for (const userQueue of usersList) {
@@ -312,6 +319,92 @@ export class GameSessionService {
       this.logger.debug(
         `Room : ${roomId} - Waiting for players to be ready...`,
       );
+    }
+
+    this.logger.debug(
+      `Room : ${roomId} - All players are ready, starting game...`,
+    );
+
+    activeGameSession.roundNumber = Math.log2(activeGameSession.players.length);
+
+    while (activeGameSession.currentRound <= activeGameSession.roundNumber) {
+      this.logger.debug(
+        `Room : ${roomId} - Starting round ${activeGameSession.currentRound}/${activeGameSession.roundNumber}`,
+      );
+
+      activeGameSession.status = IngameStatus.IN_PROGRESS;
+
+      room.emit('ingameComm', this.omitSensitives(activeGameSession));
+
+      let userTemp: UserQueue | null = null;
+      for (const userQueue of activeGameSession.players) {
+        if (!userTemp) {
+          userTemp = userQueue;
+          continue;
+        }
+
+        const users = [userTemp, userQueue];
+        userTemp = null;
+
+        if (activeGameSession.gametype === GametypeEnum.PONG) {
+          const pongData: PongData = {
+            ball: { x: 390, y: 200 },
+            player1: {
+              user: users[0].user,
+              score: 0,
+              y: 200,
+            },
+            player2: {
+              user: users[1].user,
+              score: 0,
+              y: 200,
+            },
+          };
+          activeGameSession.data = pongData;
+        } else if (activeGameSession.gametype === GametypeEnum.SHOOT) {
+          const shootData: ShootData = {
+            balls: [],
+            player1: {
+              user: users[0].user,
+              score: 0,
+              x: 150,
+              y: 350,
+              orentation: OrientationEnum.RIGHT,
+            },
+            player2: {
+              user: users[1].user,
+              score: 0,
+              x: 1475,
+              y: 350,
+              orentation: OrientationEnum.LEFT,
+            },
+          };
+          activeGameSession.data = shootData;
+        }
+
+        while (activeGameSession.status === IngameStatus.IN_PROGRESS) {
+          room.emit('gamedata', activeGameSession.data);
+        }
+
+        room.emit('ingameComm', this.omitSensitives(activeGameSession));
+
+        activeGameSession.status = IngameStatus.NEXT_ROUND_SELECT;
+      }
+
+      this.logger.debug(
+        `Room : ${roomId} - Round ${activeGameSession.currentRound}/${activeGameSession.roundNumber} finished`,
+      );
+
+      // TODO
+      // Simulate winners for the round
+      // const roundWinners = activeGameSession.players.slice(0, 2);
+      // winners.push(...roundWinners);
+      // activeGameSession.data.roundWinners = roundWinners.map(
+      //   (userQueue) => userQueue.user.id,
+      // );
+      // room.emit('roundWinners', activeGameSession.data.roundWinners);
+
+      activeGameSession.currentRound++;
     }
 
     const gameHistory = await this.gameHistoryService.create({
@@ -369,20 +462,20 @@ export class GameSessionService {
     const user = client.handshake.auth.user as User;
     const activeGameSession = this.getActiveGameSessionByUserId(user.id);
     if (activeGameSession.status === IngameStatus.LOBBY) {
-      activeGameSession.data.lobbyData[user.id].color = gameConfigDto.color;
-      activeGameSession.data.lobbyData[user.id].map = gameConfigDto.map;
+      activeGameSession.lobbyData[user.id].color = gameConfigDto.color;
+      activeGameSession.lobbyData[user.id].map = gameConfigDto.map;
       activeGameSession.room.emit('gameConfig', {
         user: user.id,
         color: gameConfigDto.color,
         map: gameConfigDto.map,
       });
     } else if (activeGameSession.status === IngameStatus.NEXT_ROUND_SELECT) {
-      if (activeGameSession.data.lobbyData[user.id].ready === true) {
+      if (activeGameSession.lobbyData[user.id].ready === true) {
         throw new AccessNotGrantedException();
       }
-      activeGameSession.data.lobbyData[user.id].color = gameConfigDto.color;
-      activeGameSession.data.lobbyData[user.id].map = gameConfigDto.map;
-      activeGameSession.data.lobbyData[user.id].ready = true;
+      activeGameSession.lobbyData[user.id].color = gameConfigDto.color;
+      activeGameSession.lobbyData[user.id].map = gameConfigDto.map;
+      activeGameSession.lobbyData[user.id].ready = true;
       activeGameSession.room.emit('gameConfig', {
         user: user.id,
         color: gameConfigDto.color,

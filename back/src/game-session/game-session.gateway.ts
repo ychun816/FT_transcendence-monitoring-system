@@ -16,6 +16,8 @@ import { WsExceptionFilter } from 'src/filters/ws-exception.filter';
 import { WsValidationPipe } from 'src/pipe/ws-validation.pipe';
 import { ParseJsonPipe } from 'src/pipe/parse-json.pipe';
 import { GameConfigDto } from './dto/game-config.dto';
+import { GamedataPongDto } from './dto/gamedata-pong.dto';
+import { GamedataShootDto } from './dto/gamedata-shoot.dto';
 
 @UseFilters(WsExceptionFilter)
 @UsePipes(new ParseJsonPipe(), new WsValidationPipe())
@@ -73,5 +75,21 @@ export class GameSessionGateway
     @MessageBody() gameConfigDto: GameConfigDto,
   ) {
     this.gameSessionService.gameConfig(client, gameConfigDto);
+  }
+
+  @SubscribeMessage('gamedata-pong')
+  gamedataPong(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: GamedataPongDto,
+  ) {
+    this.gameSessionService.gamedataPong(client, data);
+  }
+
+  @SubscribeMessage('gamedata-shoot')
+  gamedataShoot(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: GamedataShootDto,
+  ) {
+    this.gameSessionService.gamedataShoot(client, data);
   }
 }

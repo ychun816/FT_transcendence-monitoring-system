@@ -15,12 +15,4 @@ export interface PongData {
     score: number;
     y: number;
   };
-  lobbyData: {
-    [key: string]: {
-      color: string;
-      map: string;
-      ready: boolean;
-    };
-  };
-  mapVoteData: string[];
 }

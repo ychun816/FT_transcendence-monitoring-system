@@ -16,15 +16,20 @@ export class ActiveGameSession<TData> {
    * Depth 2 data is two id of players
    */
   tournamentHistory: [string, string][][];
-  data: TData & {
-    lobbyData: {
-      [key: string]: {
-        color: string;
-        map: string;
-        ready: boolean;
-      };
+
+  roundNumber: number;
+  winners: UserQueue[];
+
+  data: TData | null;
+  lobbyData: {
+    [key: string]: {
+      color: string;
+      map: string;
+      ready: boolean;
     };
   };
   createdAt: number;
   room: ReturnType<Server['in']>;
+  currentRound: number;
+  mapVoteData: string[];
 }

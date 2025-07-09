@@ -3,7 +3,6 @@ import { User } from '../user.entity';
 export class FindAllUsersDto {
   query: Partial<{
     email: string;
-    name: string;
     nickname: string;
     id: string;
   }>;
