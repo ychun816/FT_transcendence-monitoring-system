@@ -22,6 +22,8 @@ import { ShootData } from './interface/shoot-data.interface';
 import { OrientationEnum } from './enum/orientation.enum';
 import { GamedataPongDto } from './dto/gamedata-pong.dto';
 import { GamedataShootDto } from './dto/gamedata-shoot.dto';
+import { GamedataWinnerDto } from './dto/gamedata-winner.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class GameSessionService {
@@ -30,6 +32,7 @@ export class GameSessionService {
     @Inject(UsersService) private readonly usersService: UsersService,
     @Inject(GameHistoryService)
     private readonly gameHistoryService: GameHistoryService,
+    private readonly configService: ConfigService,
   ) {}
   readonly userQueue: UserQueue[] = [];
   readonly activeGameSessions: Record<string, ActiveGameSession<unknown>> = {};
@@ -56,12 +59,12 @@ export class GameSessionService {
       if (!token || typeof token !== 'string') {
         throw new JwtTokenInvalidException();
       }
-      const tokenValue = this.authService.verifyToken<User>(
+      const tokenValue = this.authService.verifyToken<Record<string, any>>(
         token,
         TokenType.ACCESS,
       );
 
-      const user = await this.usersService.findOne(tokenValue.id);
+      const user = await this.usersService.findOne(tokenValue.user);
 
       this.logger.debug(`User connected : ${user.id} - ${user.email}`);
 
@@ -109,8 +112,6 @@ export class GameSessionService {
   registerQueue(client: Socket, registerQueueDto: RegisterQueueDto) {
     const user = client.handshake.auth.user as User;
 
-    console.log(registerQueueDto, registerQueueDto.gametype);
-
     for (const userQueue of this.userQueue) {
       if (userQueue.user.id === user.id) {
         client.emit('registerQueue', RegisterQueueStatus.ALREADY_REGISTERED);
@@ -150,6 +151,17 @@ export class GameSessionService {
     userQueue: [UserQueue, ...UserQueue[]],
     gametype: GametypeEnum,
   ) {
+    for (const userQueueItem of userQueue) {
+      this.userQueue.splice(
+        this.userQueue.findIndex(
+          (value) => value.user.id === userQueueItem.user.id,
+        ),
+        1,
+      );
+    }
+
+    console.log(this.userQueue);
+
     const launchGame = () => {
       if (gametype == GametypeEnum.PONG) {
         this.logger.debug(
@@ -276,6 +288,14 @@ export class GameSessionService {
     };
 
     for (const userQueue of usersList) {
+      activeGameSession.lobbyData[userQueue.user.id] = {
+        ready: false,
+        color: null,
+        map: null,
+      };
+    }
+
+    for (const userQueue of usersList) {
       userQueue.client.emit(
         'ingameComm',
         this.omitSensitives(activeGameSession),
@@ -386,6 +406,12 @@ export class GameSessionService {
 
         while (activeGameSession.status === IngameStatus.IN_PROGRESS) {
           room.emit('gamedata', activeGameSession.data);
+          await new Promise((resolve) =>
+            setTimeout(
+              resolve,
+              1000 / this.configService.getOrThrow('GAME_FPS'),
+            ),
+          ); // 10 FPS
         }
 
         room.emit('ingameComm', this.omitSensitives(activeGameSession));
@@ -533,9 +559,10 @@ export class GameSessionService {
     }
   }
 
-  gamedataWinner(client: Socket, data: string) {
+  gamedataWinner(client: Socket, data: GamedataWinnerDto) {
     const user = client.handshake.auth.user as User;
     const activeGameSession = this.getActiveGameSessionByUserId(user.id);
+    console.log('hello');
 
     if (activeGameSession.status !== IngameStatus.IN_PROGRESS) {
       throw new AccessNotGrantedException();
@@ -544,14 +571,14 @@ export class GameSessionService {
     if (
       !activeGameSession.players
         .map((userQueue) => userQueue.user.id)
-        .includes(data)
+        .includes(data.winner)
     ) {
       throw new AccessNotGrantedException();
     }
 
     activeGameSession.winners.push(
       activeGameSession.players.find(
-        (userQueue) => userQueue.user.id === data,
+        (userQueue) => userQueue.user.id === data.winner,
       ) as UserQueue,
     );
 

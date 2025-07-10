@@ -5,7 +5,6 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
   ConnectedSocket,
-  WebSocketServer,
   OnGatewayInit,
 } from '@nestjs/websockets';
 import { GameSessionService } from './game-session.service';
@@ -18,6 +17,7 @@ import { ParseJsonPipe } from 'src/pipe/parse-json.pipe';
 import { GameConfigDto } from './dto/game-config.dto';
 import { GamedataPongDto } from './dto/gamedata-pong.dto';
 import { GamedataShootDto } from './dto/gamedata-shoot.dto';
+import { GamedataWinnerDto } from './dto/gamedata-winner.dto';
 
 @UseFilters(WsExceptionFilter)
 @UsePipes(new ParseJsonPipe(), new WsValidationPipe())
@@ -96,7 +96,7 @@ export class GameSessionGateway
   @SubscribeMessage('gamedata-winner')
   gamedataWinner(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: string,
+    @MessageBody() data: GamedataWinnerDto,
   ) {
     this.gameSessionService.gamedataWinner(client, data);
   }

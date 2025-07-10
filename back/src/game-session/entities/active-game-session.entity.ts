@@ -23,8 +23,8 @@ export class ActiveGameSession<TData> {
   data: TData | null;
   lobbyData: {
     [key: string]: {
-      color: string;
-      map: string;
+      color: string | null;
+      map: string | null;
       ready: boolean;
     };
   };
