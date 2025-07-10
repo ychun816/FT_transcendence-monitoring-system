@@ -1,27 +1,48 @@
 import { client } from "./client";
 
-export async function login (params: {
-    email : string, 
-    password: string;
-}) : Promise<string> {
-    const response = await client.post('/auth/login', params);
-    if (typeof response.data === 'string')
-        return response.data;
-    else
-        throw new Error("va te faire foutre");
+export async function login(params: {
+  email: string;
+  password: string;
+}): Promise<{ result: boolean; data: string }> {
+  const response = await client.post<string>("/auth/login", params);
+  if (response.result === true) {
+    return {
+      result: true,
+      data: response.data as string,
+    };
+  }
+  return {
+    result: false,
+    data: (response.data?.message as string) || "Login failed",
+  };
 }
 
-export async function register (params : {
-    email : string,
-    password: string;
-    nickname: string;
-}) : Promise<void> {
-    const response = await client.post('/users', params);
-    if (typeof response.data === 'string')
-        return;
-    else
-    {
-        console.error(response.data);
-        throw new Error(response.data.message);
-    }
+export async function register(params: {
+  email: string;
+  password: string;
+  nickname: string;
+}) {
+  const response = await client.post("/users", params);
+  if (response.result === true) {
+    return {
+      result: true,
+    };
+  }
+  return {
+    result: false,
+    message: response.data?.message || "Registration failed",
+  };
+}
+
+export async function logout(): Promise<void> {
+  localStorage.removeItem("token");
+  await client.post("/auth/logout");
+}
+
+export async function authStatus(): Promise<boolean> {
+  const result = await client.get("/auth/verify/token");
+  if (result.result === true) {
+    return true;
+  }
+  return false;
 }

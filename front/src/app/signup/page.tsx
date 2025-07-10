@@ -1,144 +1,146 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation'; 
-
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { register } from "@/api/auth";
+import { useIsAuth } from "@/util/useIsAuth";
 
 const styles = {
   container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100vh',
-    backgroundColor: '#1a1a2e',
-    color: '#e6e6e6',
-    fontFamily: 'Arial, sans-serif',
-    padding: '20px',
-    position: 'relative',
-    overflow: 'hidden',
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "100vh",
+    backgroundColor: "#1a1a2e",
+    color: "#e6e6e6",
+    fontFamily: "Arial, sans-serif",
+    padding: "20px",
+    position: "relative",
+    overflow: "hidden",
   },
   title: {
-    fontSize: '2.5rem',
-    marginBottom: '30px',
-    color: '#4cc9f0',
-    textShadow: '0 0 10px rgba(76, 201, 240, 0.7)',
+    fontSize: "2.5rem",
+    marginBottom: "30px",
+    color: "#4cc9f0",
+    textShadow: "0 0 10px rgba(76, 201, 240, 0.7)",
     zIndex: 2,
   },
   signupBox: {
-    backgroundColor: 'rgba(22, 33, 62, 0.8)',
-    padding: '40px',
-    borderRadius: '10px',
-    boxShadow: '0 0 20px rgba(76, 201, 240, 0.5)',
-    width: '350px',
+    backgroundColor: "rgba(22, 33, 62, 0.8)",
+    padding: "40px",
+    borderRadius: "10px",
+    boxShadow: "0 0 20px rgba(76, 201, 240, 0.5)",
+    width: "350px",
     zIndex: 2,
-    border: '2px solid #4cc9f0',
+    border: "2px solid #4cc9f0",
   },
   inputGroup: {
-    marginBottom: '20px',
+    marginBottom: "20px",
   },
   label: {
-    display: 'block',
-    marginBottom: '8px',
-    fontSize: '1rem',
-    color: '#4cc9f0',
+    display: "block",
+    marginBottom: "8px",
+    fontSize: "1rem",
+    color: "#4cc9f0",
   },
   input: {
-    width: '100%',
-    padding: '12px',
-    borderRadius: '5px',
-    border: '1px solid #4cc9f0',
-    backgroundColor: 'rgba(26, 26, 46, 0.7)',
-    color: '#e6e6e6',
-    fontSize: '1rem',
-    outline: 'none',
-    transition: 'all 0.3s',
-    '&:focus': {
-      borderColor: '#f72585',
-      boxShadow: '0 0 10px rgba(247, 37, 133, 0.5)',
-    }
+    width: "100%",
+    padding: "12px",
+    borderRadius: "5px",
+    border: "1px solid #4cc9f0",
+    backgroundColor: "rgba(26, 26, 46, 0.7)",
+    color: "#e6e6e6",
+    fontSize: "1rem",
+    outline: "none",
+    transition: "all 0.3s",
+    "&:focus": {
+      borderColor: "#f72585",
+      boxShadow: "0 0 10px rgba(247, 37, 133, 0.5)",
+    },
   },
   signupButton: {
-    width: '100%',
-    padding: '15px',
-    fontSize: '1.2rem',
-    backgroundColor: '#f72585',
-    color: 'white',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    transition: 'all 0.3s',
-    boxShadow: '0 0 15px rgba(247, 37, 133, 0.5)',
-    '&:hover': {
-      backgroundColor: '#e01e75',
-      transform: 'scale(1.02)',
-    }
+    width: "100%",
+    padding: "15px",
+    fontSize: "1.2rem",
+    backgroundColor: "#f72585",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    transition: "all 0.3s",
+    boxShadow: "0 0 15px rgba(247, 37, 133, 0.5)",
+    "&:hover": {
+      backgroundColor: "#e01e75",
+      transform: "scale(1.02)",
+    },
   },
   loginText: {
-    marginTop: '20px',
-    textAlign: 'center',
-    color: '#a9a9a9',
+    marginTop: "20px",
+    textAlign: "center",
+    color: "#a9a9a9",
   },
   loginLink: {
-    color: '#4cc9f0',
-    cursor: 'pointer',
-    textDecoration: 'none',
-    fontWeight: 'bold',
-    marginLeft: '5px',
-    transition: 'all 0.3s',
-    '&:hover': {
-      textShadow: '0 0 10px rgba(76, 201, 240, 0.7)',
-    }
+    color: "#4cc9f0",
+    cursor: "pointer",
+    textDecoration: "none",
+    fontWeight: "bold",
+    marginLeft: "5px",
+    transition: "all 0.3s",
+    "&:hover": {
+      textShadow: "0 0 10px rgba(76, 201, 240, 0.7)",
+    },
   },
   animatedBall: {
-    position: 'absolute',
-    borderRadius: '50%',
-    boxShadow: '0 0 15px rgba(76, 201, 240, 0.7)',
+    position: "absolute",
+    borderRadius: "50%",
+    boxShadow: "0 0 15px rgba(76, 201, 240, 0.7)",
     zIndex: 1,
-    animation: 'float 15s infinite alternate',
+    animation: "float 15s infinite alternate",
   },
   errorMessage: {
-    color: '#f72585',
-    marginBottom: '15px',
-    textAlign: 'center',
-    fontWeight: 'bold',
-    textShadow: '0 0 5px rgba(247, 37, 133, 0.5)',
+    color: "#f72585",
+    marginBottom: "15px",
+    textAlign: "center",
+    fontWeight: "bold",
+    textShadow: "0 0 5px rgba(247, 37, 133, 0.5)",
   },
   successMessage: {
-    color: '#4cc9f0',
-    marginBottom: '15px',
-    textAlign: 'center',
-    fontWeight: 'bold',
-    textShadow: '0 0 5px rgba(76, 201, 240, 0.5)',
-  }
+    color: "#4cc9f0",
+    marginBottom: "15px",
+    textAlign: "center",
+    fontWeight: "bold",
+    textShadow: "0 0 5px rgba(76, 201, 240, 0.5)",
+  },
 };
 
-
 const SignupPage = () => {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const router = useRouter(); 
-  
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const router = useRouter();
+
+  const isAuth = useIsAuth();
+
   const { balls, keyframes } = useMemo(() => {
     const ballsData = Array.from({ length: 10 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
       size: Math.random() * 40 + 20,
-      color: i % 2 === 0 ? '#4cc9f0' : '#f72585',
+      color: i % 2 === 0 ? "#4cc9f0" : "#f72585",
       moveX: Math.random() * 200 - 100,
       moveY: Math.random() * 200 - 100,
-      duration: 15 + Math.random() * 20
+      duration: 15 + Math.random() * 20,
     }));
 
-    let keyframesContent = '';
-    ballsData.forEach(ball => {
+    let keyframesContent = "";
+    ballsData.forEach((ball) => {
       keyframesContent += `
         @keyframes move${ball.id} {
           0% { transform: translate(0, 0); }
@@ -149,42 +151,57 @@ const SignupPage = () => {
 
     return {
       balls: ballsData,
-      keyframes: keyframesContent
+      keyframes: keyframesContent,
     };
   }, []);
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!username || !email || !password || !confirmPassword) {
-      setError('Veuillez remplir tous les champs');
+      setError("Veuillez remplir tous les champs");
       return;
     }
-    
+
     if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
+      setError("Les mots de passe ne correspondent pas");
       return;
     }
-    
-    setError('');
-    setSuccess('Compte créé avec succès! Redirection...');
-    
+
+    const result = await register({
+      email,
+      password,
+      nickname: username,
+    });
+
+    if (result.result === false) {
+      setError(result.message);
+      return;
+    }
+
+    setError("");
+    setSuccess("Compte créé avec succès! Redirection...");
+
     const userData = { username, email, password };
-    localStorage.setItem('userData', JSON.stringify(userData));
-    
+    localStorage.setItem("userData", JSON.stringify(userData));
+
     setTimeout(() => {
-      router.push('/login');
+      router.push("/login");
     }, 2000);
   };
+
+  if (isAuth === true) {
+    router.replace("/home");
+  }
 
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>Créer un compte</h1>
-      
+
       <form onSubmit={handleSignup} style={styles.signupBox}>
         {error && <div style={styles.errorMessage}>{error}</div>}
         {success && <div style={styles.successMessage}>{success}</div>}
-        
+
         <div style={styles.inputGroup}>
           <label style={styles.label}>Nom d'utilisateur</label>
           <input
@@ -195,7 +212,7 @@ const SignupPage = () => {
             placeholder="Choisissez un pseudo"
           />
         </div>
-        
+
         <div style={styles.inputGroup}>
           <label style={styles.label}>Email</label>
           <input
@@ -206,7 +223,7 @@ const SignupPage = () => {
             placeholder="votre@email.com"
           />
         </div>
-        
+
         <div style={styles.inputGroup}>
           <label style={styles.label}>Mot de passe</label>
           <input
@@ -217,7 +234,7 @@ const SignupPage = () => {
             placeholder="••••••••"
           />
         </div>
-        
+
         <div style={styles.inputGroup}>
           <label style={styles.label}>Confirmer le mot de passe</label>
           <input
@@ -228,19 +245,21 @@ const SignupPage = () => {
             placeholder="••••••••"
           />
         </div>
-        
+
         <button type="submit" style={styles.signupButton}>
           S'inscrire
         </button>
-        
+
         <div style={styles.loginText}>
-          Déjà un compte? 
-          <Link href="/login" style={styles.loginLink}>Se connecter</Link>
+          Déjà un compte?
+          <Link href="/login" style={styles.loginLink}>
+            Se connecter
+          </Link>
         </div>
       </form>
-      
+
       {}
-      {balls.map(ball => (
+      {balls.map((ball) => (
         <div
           key={ball.id}
           style={{
@@ -249,23 +268,28 @@ const SignupPage = () => {
             top: `${ball.y}%`,
             width: ball.size,
             height: ball.size,
-            backgroundColor: `rgba(${ball.color === '#4cc9f0' ? '76, 201, 240' : '247, 37, 133'}, ${0.2 + 0.5 * 0.3})`,
+            backgroundColor: `rgba(${
+              ball.color === "#4cc9f0" ? "76, 201, 240" : "247, 37, 133"
+            }, ${0.2 + 0.5 * 0.3})`,
             animation: `move${ball.id} ${ball.duration}s infinite alternate ease-in-out`,
           }}
         />
       ))}
-      
+
       <style jsx global>{`
         @keyframes float {
-          0% { transform: translate(0, 0); }
-          100% { transform: translate(50px, 50px); }
+          0% {
+            transform: translate(0, 0);
+          }
+          100% {
+            transform: translate(50px, 50px);
+          }
         }
         ${keyframes}
       `}</style>
 
-      
       <style jsx>{keyframes}</style>
-      
+
       <style jsx global>{`
         @keyframes float {
           0% { transform: translate(0, 0); }
