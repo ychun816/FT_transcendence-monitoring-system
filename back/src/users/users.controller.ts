@@ -35,12 +35,13 @@ export class UsersController {
   }
 
   @Get()
+  @Roles(AuthorityEnum.NORMAL)
   findAll(@Query() findAllUsersDto: FindAllUsersDto) {
     return this.usersService.findAll(findAllUsersDto);
   }
 
   @Get(':id')
-  @Roles(AuthorityEnum.ADMIN)
+  @Roles(AuthorityEnum.NORMAL)
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
