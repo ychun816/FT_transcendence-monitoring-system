@@ -434,6 +434,7 @@ export class GameSessionService {
       // TODO
       gametype: GametypeEnum.PONG,
       players: usersList.map((userQueue) => userQueue.user.id),
+      winner: 'TODO', // TODO : Modify
     });
   }
 
