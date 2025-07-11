@@ -1,29 +1,9 @@
-import {
-  AfterLoad,
-  BeforeInsert,
-  Column,
-  Entity,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { AuthorityEnum } from './enums/authority.enum';
 import { Exclude } from 'class-transformer';
 
 @Entity()
 export class User {
-  @BeforeInsert()
-  private beforeInsert() {
-    this.authority = JSON.stringify(
-      this.authority,
-    ) as unknown as AuthorityEnum[];
-  }
-
-  @AfterLoad()
-  private afterLoad() {
-    this.authority = JSON.parse(
-      this.authority as unknown as string,
-    ) as AuthorityEnum[];
-  }
-
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -33,7 +13,13 @@ export class User {
   @Column({ type: 'text', unique: true })
   nickname: string;
 
-  @Column('text')
+  @Column({
+    type: 'text',
+    transformer: {
+      from: (value: string) => JSON.parse(value) as AuthorityEnum[],
+      to: (value: AuthorityEnum[]) => JSON.stringify(value),
+    },
+  })
   authority: AuthorityEnum[];
 
   @Exclude()
@@ -43,4 +29,14 @@ export class User {
   @Exclude()
   @Column({ type: 'text' })
   keysalt: string;
+
+  @Column({
+    type: 'text',
+    default: '[]',
+    transformer: {
+      from: (value: string) => JSON.parse(value) as string[],
+      to: (value: string[]) => JSON.stringify(value),
+    },
+  })
+  friends: string[];
 }
