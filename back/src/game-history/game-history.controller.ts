@@ -45,22 +45,15 @@ export class GameHistoryController {
     return this.findAll(newQuery);
   }
 
+  @Get('/me/statistics')
+  @Roles(AuthorityEnum.NORMAL)
+  getMyStatistics(@Req() request: RequestWithUser) {
+    return this.gameHistoryService.getStatictics(request.user.id);
+  }
+
   @Get(':id')
   @Roles(AuthorityEnum.NORMAL)
   findOne(@Param('id') id: string) {
     return this.gameHistoryService.findById(id);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateGameHistoryDto: UpdateGameHistoryDto,
-  ) {
-    return this.gameHistoryService.update(+id, updateGameHistoryDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.gameHistoryService.remove(+id);
   }
 }

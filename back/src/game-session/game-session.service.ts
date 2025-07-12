@@ -24,6 +24,7 @@ import { GamedataPongDto } from './dto/gamedata-pong.dto';
 import { GamedataShootDto } from './dto/gamedata-shoot.dto';
 import { GamedataWinnerDto } from './dto/gamedata-winner.dto';
 import { ConfigService } from '@nestjs/config';
+import { InternalServerException } from 'src/errors/exceptions/internal-server.excecption';
 
 @Injectable()
 export class GameSessionService {
@@ -175,7 +176,7 @@ export class GameSessionService {
         this.handleGame(userQueue); // TODO : How to handle promise?
       }
     };
-    // TODO : Doesn't work waiting time
+    // TODO : Test this
     const timeDiffMs = Date.now() - userQueue[0].entryTimestamp.getTime();
     if (timeDiffMs > ms('60s')) {
       // If user waiting >= 2 , create room
@@ -411,7 +412,7 @@ export class GameSessionService {
               resolve,
               1000 / this.configService.getOrThrow('GAME_FPS'),
             ),
-          ); // 10 FPS
+          );
         }
 
         room.emit('ingame-comm', this.omitSensitives(activeGameSession));
@@ -429,13 +430,6 @@ export class GameSessionService {
     activeGameSession.status = IngameStatus.TERMINATED;
 
     room.emit('ingame-comm', this.omitSensitives(activeGameSession));
-
-    const gameHistory = await this.gameHistoryService.create({
-      // TODO
-      gametype: GametypeEnum.PONG,
-      players: usersList.map((userQueue) => userQueue.user.id),
-      winner: 'TODO', // TODO : Modify
-    });
   }
 
   readyUser(client: Socket) {
@@ -560,9 +554,11 @@ export class GameSessionService {
     }
   }
 
-  gamedataWinner(client: Socket, data: GamedataWinnerDto) {
+  async gamedataWinner(client: Socket, data: GamedataWinnerDto) {
     const user = client.handshake.auth.user as User;
-    const activeGameSession = this.getActiveGameSessionByUserId(user.id);
+    const activeGameSession = this.getActiveGameSessionByUserId<
+      PongData | ShootData
+    >(user.id);
 
     if (activeGameSession.status !== IngameStatus.IN_PROGRESS) {
       throw new AccessNotGrantedException();
@@ -582,7 +578,20 @@ export class GameSessionService {
       ) as UserQueue,
     );
 
-    activeGameSession.status = IngameStatus.INTERRUPTED;
+    if (!activeGameSession.data) {
+      throw new InternalServerException();
+    }
+
+    await this.gameHistoryService.create({
+      gametype: activeGameSession.gametype,
+      players: [
+        activeGameSession.data.player1.user.id,
+        activeGameSession.data.player2.user.id,
+      ],
+      winner: data.winner,
+    });
+
+    activeGameSession.status = IngameStatus.INTERMISSION;
 
     activeGameSession.room.emit('gamedata-winner', data);
   }
