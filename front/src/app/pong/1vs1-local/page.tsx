@@ -325,9 +325,9 @@ const PongGame = () => {
           setBallVelocity({ x: newVx, y: newVy });
         }
         
-        return { 
-          x: newX, 
-          y: Math.max(0, Math.min(GAME_HEIGHT - BALL_SIZE, newY)) 
+        return {
+          x: newX,
+          y: Math.max(0, Math.min(GAME_HEIGHT - BALL_SIZE, newY))
         };
       });
       

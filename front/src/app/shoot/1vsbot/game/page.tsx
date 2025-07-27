@@ -125,7 +125,7 @@ const GameLocal = () => {
     lastDirection: { dx: 0, dy: 0 },
     canDash: true,
     dashCooldown: 500,
-    dashDuration: 75,
+    dashDuration: 50,
     dashSpeed: 50,
     isDashing: false,
     dashStartTime: 0,
