@@ -17,97 +17,93 @@ const TournamentPage = () => {
     { id: 8, name: 'Emma Laurent', avatar: 'EL' }
   ]);
   
-  const [matches, setMatches] = useState([
-    { id: 1, round: 'quart', player1Id: 1, player2Id: 2, winnerId: null, score: null },
-    { id: 2, round: 'quart', player1Id: 3, player2Id: 4, winnerId: null, score: null },
-    { id: 3, round: 'quart', player1Id: 5, player2Id: 6, winnerId: null, score: null },
-    { id: 4, round: 'quart', player1Id: 7, player2Id: 8, winnerId: null, score: null },
-    { id: 5, round: 'demi', player1Id: null, player2Id: null, winnerId: null, score: null },
-    { id: 6, round: 'demi', player1Id: null, player2Id: null, winnerId: null, score: null },
-    { id: 7, round: 'finale', player1Id: null, player2Id: null, winnerId: null, score: null }
-  ]);
-  
+  const [tournamentSize, setTournamentSize] = useState(8); // 2, 4 ou 8 joueurs
+  const [matches, setMatches] = useState<any[]>([]);
   const [activeMatch, setActiveMatch] = useState<number | null>(null);
   const [scores, setScores] = useState<{[key: number]: [number, number]}>({});
   const [tournamentWinner, setTournamentWinner] = useState<number | null>(null);
   
-  const containerStyle = {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-    color: '#e6e6e6',
-    padding: '20px',
-    fontFamily: 'Arial, sans-serif',
-    position: 'relative',
-    overflow: 'hidden'
-  };
-
-  const cardStyle = {
-    background: 'rgba(30, 30, 46, 0.7)',
-    borderRadius: '15px',
-    padding: '25px',
-    marginBottom: '25px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-    backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(76, 201, 240, 0.2)',
-    zIndex: 2,
-    position: 'relative'
-  };
-
-  const buttonStyle = {
-    background: 'linear-gradient(45deg, #4cc9f0, #4361ee)',
-    border: 'none',
-    color: 'white',
-    padding: '12px 25px',
-    borderRadius: '50px',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    transition: 'all 0.3s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-  };
-
-  const [balls] = useState(() => {
-    return Array.from({ length: 12 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 50 + 30,
-      speedX: (Math.random() - 0.5) * 0.8,
-      speedY: (Math.random() - 0.5) * 0.8,
-      color: i % 2 === 0 ? '#4cc9f0' : '#f72585',
-    }));
-  });
-
   useEffect(() => {
-    const updatedMatches = [...matches];
+    let initialMatches: any[] = [];
     
-    updatedMatches[4] = {
-      ...updatedMatches[4],
-      player1Id: getMatchWinner(1),
-      player2Id: getMatchWinner(2)
-    };
-    
-    updatedMatches[5] = {
-      ...updatedMatches[5],
-      player1Id: getMatchWinner(3),
-      player2Id: getMatchWinner(4)
-    };
-    
-    updatedMatches[6] = {
-      ...updatedMatches[6],
-      player1Id: getMatchWinner(5),
-      player2Id: getMatchWinner(6)
-    };
-    
-    const finalWinner = getMatchWinner(7);
-    if (finalWinner) {
-      setTournamentWinner(finalWinner);
+    if (tournamentSize === 2) {
+      initialMatches = [
+        { id: 1, round: 'finale', player1Id: 1, player2Id: 2, winnerId: null, score: null }
+      ];
+    } else if (tournamentSize === 4) {
+      initialMatches = [
+        { id: 1, round: 'demi', player1Id: 1, player2Id: 2, winnerId: null, score: null },
+        { id: 2, round: 'demi', player1Id: 3, player2Id: 4, winnerId: null, score: null },
+        { id: 3, round: 'finale', player1Id: null, player2Id: null, winnerId: null, score: null }
+      ];
+    } else { // 8 joueurs
+      initialMatches = [
+        { id: 1, round: 'quart', player1Id: 1, player2Id: 2, winnerId: null, score: null },
+        { id: 2, round: 'quart', player1Id: 3, player2Id: 4, winnerId: null, score: null },
+        { id: 3, round: 'quart', player1Id: 5, player2Id: 6, winnerId: null, score: null },
+        { id: 4, round: 'quart', player1Id: 7, player2Id: 8, winnerId: null, score: null },
+        { id: 5, round: 'demi', player1Id: null, player2Id: null, winnerId: null, score: null },
+        { id: 6, round: 'demi', player1Id: null, player2Id: null, winnerId: null, score: null },
+        { id: 7, round: 'finale', player1Id: null, player2Id: null, winnerId: null, score: null }
+      ];
     }
     
-    setMatches(updatedMatches);
-  }, [scores]);
+    setMatches(initialMatches);
+    setScores({});
+    setActiveMatch(null);
+    setTournamentWinner(null);
+  }, [tournamentSize]);
+  
+  useEffect(() => {
+    setMatches(prevMatches => {
+      const updatedMatches = [...prevMatches];
+      
+      if (tournamentSize === 8) {
+        updatedMatches[4] = {
+          ...updatedMatches[4],
+          player1Id: getMatchWinner(1),
+          player2Id: getMatchWinner(2)
+        };
+        
+        updatedMatches[5] = {
+          ...updatedMatches[5],
+          player1Id: getMatchWinner(3),
+          player2Id: getMatchWinner(4)
+        };
+        
+        updatedMatches[6] = {
+          ...updatedMatches[6],
+          player1Id: getMatchWinner(5),
+          player2Id: getMatchWinner(6)
+        };
+        
+        const finalWinner = getMatchWinner(7);
+        if (finalWinner) {
+          setTimeout(() => setTournamentWinner(finalWinner), 0);
+        }
+        
+      } else if (tournamentSize === 4) {
+        updatedMatches[2] = {
+          ...updatedMatches[2],
+          player1Id: getMatchWinner(1),
+          player2Id: getMatchWinner(2)
+        };
+        
+        const finalWinner = getMatchWinner(3);
+        if (finalWinner) {
+          setTimeout(() => setTournamentWinner(finalWinner), 0);
+        }
+        
+      } else if (tournamentSize === 2) {
+        const finalWinner = getMatchWinner(1);
+        if (finalWinner) {
+          setTimeout(() => setTournamentWinner(finalWinner), 0);
+        }
+      }
+      
+      return updatedMatches;
+    });
+  }, [scores, tournamentSize]);
 
   const getMatchWinner = (matchId: number) => {
     const match = matches.find(m => m.id === matchId);
@@ -246,9 +242,72 @@ const TournamentPage = () => {
     );
   };
 
+  const containerStyle = {
+    minHeight: '100vh',
+    background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+    color: '#e6e6e6',
+    padding: '20px',
+    fontFamily: 'Arial, sans-serif',
+    position: 'relative',
+    overflow: 'hidden'
+  };
+
+  const cardStyle = {
+    background: 'rgba(30, 30, 46, 0.7)',
+    borderRadius: '15px',
+    padding: '25px',
+    marginBottom: '25px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+    backdropFilter: 'blur(10px)',
+    border: '1px solid rgba(76, 201, 240, 0.2)',
+    zIndex: 2,
+    position: 'relative'
+  };
+
+  const buttonStyle = {
+    background: 'linear-gradient(45deg, #4cc9f0, #4361ee)',
+    border: 'none',
+    color: 'white',
+    padding: '12px 25px',
+    borderRadius: '50px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    transition: 'all 0.3s ease',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+  };
+
+  const sizeButtonStyle = (size: number) => ({
+    ...buttonStyle,
+    padding: '8px 15px',
+    background: tournamentSize === size 
+      ? 'linear-gradient(45deg, #4cf06e, #3a9c4a)' 
+      : 'rgba(76, 201, 240, 0.2)',
+    border: tournamentSize === size ? '1px solid #4cf06e' : '1px solid rgba(76, 201, 240, 0.5)'
+  });
+
+  const [balls] = useState(() => {
+    return Array.from({ length: 12 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 50 + 30,
+      speedX: (Math.random() - 0.5) * 0.8,
+      speedY: (Math.random() - 0.5) * 0.8,
+      color: i % 2 === 0 ? '#4cc9f0' : '#f72585',
+    }));
+  });
+
+  const getGridColumns = () => {
+    if (tournamentSize === 2) return '1fr';
+    if (tournamentSize === 4) return 'repeat(2, 1fr)';
+    return 'repeat(3, 1fr)';
+  };
+
   return (
     <div style={containerStyle}>
-      {}
       {balls.map(ball => (
         <div
           key={ball.id}
@@ -259,8 +318,8 @@ const TournamentPage = () => {
             top: `${ball.y}%`,
             width: ball.size,
             height: ball.size,
-            backgroundColor: `rgba(${ball.color === '#4cc9f0' ? '76, 201, 240' : '247, 37, 133'}, ${0.2 + Math.random() * 0.3})`,
-            animation: `move${ball.id} ${15 + Math.random() * 20}s infinite alternate ease-in-out`,
+            backgroundColor: `rgba(${ball.color === '#4cc9f0' ? '76, 201, 240' : '247, 37, 133'}, ${0.2 + 0.4 * 0.3})`,
+            animation: `move${ball.id} ${15 + 0.5 * 20}s infinite alternate ease-in-out`,
             zIndex: 1,
           }}
         />
@@ -271,38 +330,52 @@ const TournamentPage = () => {
           <h1 style={{ fontSize: '2.5rem', color: '#4cc9f0', textShadow: '0 0 10px rgba(76, 201, 240, 0.7)' }}>
             Tournoi Pong 1vs1
           </h1>
-          <button 
-            onClick={() => router.push('/')}
-            style={{
-              ...buttonStyle,
-              background: 'rgba(247, 37, 133, 0.2)',
-              border: '1px solid rgba(247, 37, 133, 0.5)'
-            }}
-          >
-            Retour à l'accueil
-          </button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '5px' }}>
+              <button onClick={() => setTournamentSize(2)} style={sizeButtonStyle(2)}>
+                2J
+              </button>
+              <button onClick={() => setTournamentSize(4)} style={sizeButtonStyle(4)}>
+                4J
+              </button>
+              <button onClick={() => setTournamentSize(8)} style={sizeButtonStyle(8)}>
+                8J
+              </button>
+            </div>
+            <button 
+              onClick={() => router.push('/')}
+              style={{
+                ...buttonStyle,
+                background: 'rgba(247, 37, 133, 0.2)',
+                border: '1px solid rgba(247, 37, 133, 0.5)'
+              }}
+            >
+              Retour à l'accueil
+            </button>
+          </div>
         </div>
 
         <div style={{ ...cardStyle, marginBottom: '30px' }}>
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: getGridColumns(),
             gap: '20px',
             marginTop: '20px'
           }}>
-            {}
-            <div>
-              <h3 style={{ color: '#4cc9f0', marginBottom: '15px', textAlign: 'center' }}>Quarts de finale</h3>
-              {matches.filter(m => m.round === 'quart').map(renderMatch)}
-            </div>
+            {tournamentSize === 8 && (
+              <div>
+                <h3 style={{ color: '#4cc9f0', marginBottom: '15px', textAlign: 'center' }}>Quarts de finale</h3>
+                {matches.filter(m => m.round === 'quart').map(renderMatch)}
+              </div>
+            )}
             
-            {}
-            <div>
-              <h3 style={{ color: '#4cc9f0', marginBottom: '15px', textAlign: 'center' }}>Demi-finales</h3>
-              {matches.filter(m => m.round === 'demi').map(renderMatch)}
-            </div>
+            {(tournamentSize === 4 || tournamentSize === 8) && (
+              <div>
+                <h3 style={{ color: '#4cc9f0', marginBottom: '15px', textAlign: 'center' }}>Demi-finales</h3>
+                {matches.filter(m => m.round === 'demi').map(renderMatch)}
+              </div>
+            )}
             
-            {}
             <div>
               <h3 style={{ color: '#4cc9f0', marginBottom: '15px', textAlign: 'center' }}>Finale</h3>
               {matches.filter(m => m.round === 'finale').map(renderMatch)}
@@ -340,7 +413,6 @@ const TournamentPage = () => {
           </div>
         </div>
         
-        {}
         {activeMatch !== null && (
           <div style={cardStyle}>
             <h2 style={{ fontSize: '1.8rem', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -470,20 +542,27 @@ const TournamentPage = () => {
           </div>
         )}
       </div>
-
-      <style jsx global>{`
-        @keyframes float {
-          0% { transform: translate(0, 0); }
-          100% { transform: translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px); }
-        }
-        
-        ${balls.map(ball => `
-          @keyframes move${ball.id} {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px); }
-          }
-        `).join('')}
-      `}</style>
+      
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        marginTop: '30px',
+        marginBottom: '50px',
+        position: 'relative',
+        zIndex: 2
+      }}>
+        <button 
+          style={{
+            ...buttonStyle,
+            padding: '15px 40px',
+            fontSize: '1.2rem',
+            boxShadow: '0 0 20px rgba(76, 201, 240, 0.5)',
+          }}
+          onClick={() => alert("Tournoi prêt à commencer !")}
+        >
+          Prêt
+        </button>
+      </div>
     </div>
   );
 };

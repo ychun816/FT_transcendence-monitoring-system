@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import {io} from 'socket.io-client';
 
-const ConfigScreen = dynamic(() => import('../../../ConfigScreen'), { ssr: false });
+const ConfigScreen = dynamic(() => import('../Config/page'), { ssr: false });
 
 const styles = {
   container: {
