@@ -1,17 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Req } from '@nestjs/common';
 import { GameHistoryService } from './game-history.service';
 import { CreateGameHistoryDto } from './dto/create-game-history.dto';
-import { UpdateGameHistoryDto } from './dto/update-game-history.dto';
 import { GetMyGameHistoryDto } from './dto/get-my-game-history.dto';
 import { RequestWithUser } from 'src/auth/interfaces/request-with-user.interface';
 import { GetAllGameHistoryDto } from './dto/get-all-game-history.dto';

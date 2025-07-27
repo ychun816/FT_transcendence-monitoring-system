@@ -10,7 +10,7 @@ import { RegisterQueueDto } from './dto/register-queue.dto';
 import { UsersService } from 'src/users/users.service';
 import { RegisterQueueStatus } from './enum/register-queue-status.enum';
 import { GametypeEnum } from './enum/game-type.enum';
-import ms from 'ms';
+import ms, { StringValue } from 'ms';
 import { GameHistoryService } from 'src/game-history/game-history.service';
 import { IngameStatus } from './enum/ingame-status.enum';
 import { ActiveGameSession } from './entities/active-game-session.entity';
@@ -178,13 +178,13 @@ export class GameSessionService {
     };
     // TODO : Test this
     const timeDiffMs = Date.now() - userQueue[0].entryTimestamp.getTime();
-    if (timeDiffMs > ms('60s')) {
+    if (timeDiffMs > ms('30s')) {
       // If user waiting >= 2 , create room
       launchGame();
-    } else if (timeDiffMs > ms('30s') && userQueue.length >= 4) {
+    } else if (timeDiffMs > ms('20s') && userQueue.length >= 4) {
       // If user waiting >= 4 , create room
       launchGame();
-    } else if (timeDiffMs > ms('20s') && userQueue.length >= 8) {
+    } else if (userQueue.length >= 8) {
       // If user waiting >= 8 , create room
       launchGame();
     } else {
@@ -207,9 +207,15 @@ export class GameSessionService {
     };
 
     this.userQueue.forEach((userQueue) => {
-      if (userQueue.gametype === GametypeEnum.PONG) {
+      if (
+        userQueue.gametype === GametypeEnum.PONG &&
+        queue[GametypeEnum.PONG].length < 8
+      ) {
         queue[GametypeEnum.PONG].push(userQueue);
-      } else {
+      } else if (
+        userQueue.gametype === GametypeEnum.SHOOT &&
+        queue[GametypeEnum.SHOOT].length < 8
+      ) {
         queue[GametypeEnum.SHOOT].push(userQueue);
       }
     });
@@ -364,6 +370,19 @@ export class GameSessionService {
         const users = [userTemp, userQueue];
         userTemp = null;
 
+        activeGameSession.status = IngameStatus.NEXT_ROUND_SELECT;
+        room.emit('ingame-comm', this.omitSensitives(activeGameSession));
+        await new Promise((resolve) =>
+          setTimeout(
+            resolve,
+            ms(
+              this.configService.getOrThrow<StringValue>(
+                'NEXT_ROUND_SELECT_TIMEOUT',
+              ),
+            ),
+          ),
+        );
+
         if (activeGameSession.gametype === GametypeEnum.PONG) {
           const pongData: PongData = {
             ball: { x: 390, y: 200 },
@@ -414,10 +433,6 @@ export class GameSessionService {
             ),
           );
         }
-
-        room.emit('ingame-comm', this.omitSensitives(activeGameSession));
-
-        activeGameSession.status = IngameStatus.NEXT_ROUND_SELECT;
       }
 
       this.logger.debug(
@@ -477,15 +492,7 @@ export class GameSessionService {
   gameConfig(client: Socket, gameConfigDto: GameConfigDto) {
     const user = client.handshake.auth.user as User;
     const activeGameSession = this.getActiveGameSessionByUserId(user.id);
-    if (activeGameSession.status === IngameStatus.LOBBY) {
-      activeGameSession.lobbyData[user.id].color = gameConfigDto.color;
-      activeGameSession.lobbyData[user.id].map = gameConfigDto.map;
-      activeGameSession.room.emit('game-config', {
-        user: user.id,
-        color: gameConfigDto.color,
-        map: gameConfigDto.map,
-      });
-    } else if (activeGameSession.status === IngameStatus.NEXT_ROUND_SELECT) {
+    if (activeGameSession.status === IngameStatus.NEXT_ROUND_SELECT) {
       if (activeGameSession.lobbyData[user.id].ready === true) {
         throw new AccessNotGrantedException();
       }
