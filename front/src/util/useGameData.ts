@@ -48,6 +48,7 @@ export function useGameData<TGametype>(props?: UseGameDataProps) {
     null
   );
   const [gamedata, setGamedata] = useState<TGametype | null>(null);
+  const [readyUsers, setReadyUsers] = useState<string[]>([]);
 
   useEffect(() => {
     client.connect();
@@ -77,11 +78,32 @@ export function useGameData<TGametype>(props?: UseGameDataProps) {
       setGamedata(data);
     });
 
-    client.on("ready-user");
+    client.on("ready-user", (userid: string) => {
+      setReadyUsers((prev) => [...prev, userid]);
+    });
 
-    client.on("cancel-ready-user");
+    client.on("cancel-ready-user", (userid: string) => {
+      setReadyUsers((prev) => prev.filter((id) => id !== userid));
+    });
 
-    client.on("game-config");
+    client.on(
+      "game-config",
+      (data: { user: string; color: string; map: string }) => {
+        if (ingameData && ingameData.lobbyData) {
+          setIngameData((prev) => ({
+            ...prev,
+            lobbyData: {
+              ...prev.lobbyData,
+              [data.user]: {
+                ...prev.lobbyData[data.user],
+                color: data.color,
+                map: data.map,
+              },
+            },
+          }));
+        }
+      }
+    );
 
     client.on("gamedata-winner");
 
@@ -90,5 +112,5 @@ export function useGameData<TGametype>(props?: UseGameDataProps) {
     };
   }, []);
 
-  return { registerQueueStatus, ingameData, gamedata };
+  return { registerQueueStatus, ingameData, gamedata, readyUsers };
 }
