@@ -5,7 +5,6 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
   ConnectedSocket,
-  WebSocketServer,
   OnGatewayInit,
 } from '@nestjs/websockets';
 import { GameSessionService } from './game-session.service';
@@ -18,6 +17,7 @@ import { ParseJsonPipe } from 'src/pipe/parse-json.pipe';
 import { GameConfigDto } from './dto/game-config.dto';
 import { GamedataPongDto } from './dto/gamedata-pong.dto';
 import { GamedataShootDto } from './dto/gamedata-shoot.dto';
+import { GamedataWinnerDto } from './dto/gamedata-winner.dto';
 
 @UseFilters(WsExceptionFilter)
 @UsePipes(new ParseJsonPipe(), new WsValidationPipe())
@@ -46,7 +46,7 @@ export class GameSessionGateway
     this.gameSessionService.handleDisconnect(client);
   }
 
-  @SubscribeMessage('registerQueue')
+  @SubscribeMessage('register-queue')
   registerQueue(
     @ConnectedSocket() client: Socket,
     @MessageBody() registerQueueDto: RegisterQueueDto,
@@ -54,22 +54,22 @@ export class GameSessionGateway
     this.gameSessionService.registerQueue(client, registerQueueDto);
   }
 
-  @SubscribeMessage('unregisterQueue')
+  @SubscribeMessage('unregister-queue')
   unregisterQueue(@ConnectedSocket() client: Socket) {
     this.gameSessionService.unregisterQueue(client);
   }
 
-  @SubscribeMessage('readyUser')
+  @SubscribeMessage('ready-user')
   readyUser(@ConnectedSocket() client: Socket) {
     this.gameSessionService.readyUser(client);
   }
 
-  @SubscribeMessage('cancelReadyUser')
+  @SubscribeMessage('cancel-ready-user')
   cancelReadyUser(@ConnectedSocket() client: Socket) {
     this.gameSessionService.cancelReadyUser(client);
   }
 
-  @SubscribeMessage('gameConfig')
+  @SubscribeMessage('game-config')
   gameConfig(
     @ConnectedSocket() client: Socket,
     @MessageBody() gameConfigDto: GameConfigDto,
@@ -96,7 +96,7 @@ export class GameSessionGateway
   @SubscribeMessage('gamedata-winner')
   gamedataWinner(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: string,
+    @MessageBody() data: GamedataWinnerDto,
   ) {
     this.gameSessionService.gamedataWinner(client, data);
   }

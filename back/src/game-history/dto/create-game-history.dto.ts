@@ -8,4 +8,7 @@ export class CreateGameHistoryDto {
 
   @IsString({ each: true })
   players: string[];
+
+  @IsString()
+  winner: string;
 }

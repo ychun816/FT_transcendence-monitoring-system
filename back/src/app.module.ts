@@ -39,6 +39,7 @@ import { GameSessionModule } from './game-session/game-session.module';
         TOKEN_KEY: Joi.string(),
         THROTTLE_TTL: Joi.number().default(300),
         THROTTLE_LIMIT: Joi.number().default(100),
+        GAME_FPS: Joi.number().default(10),
       }),
       validationOptions: {
         allowUnknown: true,

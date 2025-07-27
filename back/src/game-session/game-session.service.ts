@@ -22,6 +22,9 @@ import { ShootData } from './interface/shoot-data.interface';
 import { OrientationEnum } from './enum/orientation.enum';
 import { GamedataPongDto } from './dto/gamedata-pong.dto';
 import { GamedataShootDto } from './dto/gamedata-shoot.dto';
+import { GamedataWinnerDto } from './dto/gamedata-winner.dto';
+import { ConfigService } from '@nestjs/config';
+import { InternalServerException } from 'src/errors/exceptions/internal-server.excecption';
 
 @Injectable()
 export class GameSessionService {
@@ -30,6 +33,7 @@ export class GameSessionService {
     @Inject(UsersService) private readonly usersService: UsersService,
     @Inject(GameHistoryService)
     private readonly gameHistoryService: GameHistoryService,
+    private readonly configService: ConfigService,
   ) {}
   readonly userQueue: UserQueue[] = [];
   readonly activeGameSessions: Record<string, ActiveGameSession<unknown>> = {};
@@ -56,12 +60,12 @@ export class GameSessionService {
       if (!token || typeof token !== 'string') {
         throw new JwtTokenInvalidException();
       }
-      const tokenValue = this.authService.verifyToken<User>(
+      const tokenValue = this.authService.verifyToken<Record<string, any>>(
         token,
         TokenType.ACCESS,
       );
 
-      const user = await this.usersService.findOne(tokenValue.id);
+      const user = await this.usersService.findOne(tokenValue.user);
 
       this.logger.debug(`User connected : ${user.id} - ${user.email}`);
 
@@ -74,7 +78,7 @@ export class GameSessionService {
             .includes(user.id)
         ) {
           // TODO : reestablish user session, send info to client
-          client.emit('gameSession', this.omitSensitives(activeGameSession));
+          client.emit('game-session', this.omitSensitives(activeGameSession));
           return;
         }
       }
@@ -109,11 +113,9 @@ export class GameSessionService {
   registerQueue(client: Socket, registerQueueDto: RegisterQueueDto) {
     const user = client.handshake.auth.user as User;
 
-    console.log(registerQueueDto, registerQueueDto.gametype);
-
     for (const userQueue of this.userQueue) {
       if (userQueue.user.id === user.id) {
-        client.emit('registerQueue', RegisterQueueStatus.ALREADY_REGISTERED);
+        client.emit('register-queue', RegisterQueueStatus.ALREADY_REGISTERED);
         return;
       }
     }
@@ -126,7 +128,7 @@ export class GameSessionService {
     };
 
     this.userQueue.push(newUserQueue);
-    client.emit('registerQueue', RegisterQueueStatus.REGISTERED);
+    client.emit('register-queue', RegisterQueueStatus.REGISTERED);
   }
 
   unregisterQueue(client: Socket) {
@@ -137,19 +139,30 @@ export class GameSessionService {
     );
 
     if (index === -1) {
-      client.emit('registerQueue', RegisterQueueStatus.NOT_REGISTERED);
+      client.emit('register-queue', RegisterQueueStatus.NOT_REGISTERED);
       return;
     }
 
     this.userQueue.splice(index, 1);
 
-    client.emit('registerQueue', RegisterQueueStatus.UNREGISTERED);
+    client.emit('register-queue', RegisterQueueStatus.UNREGISTERED);
   }
 
   private handleGameQueueEntry(
     userQueue: [UserQueue, ...UserQueue[]],
     gametype: GametypeEnum,
   ) {
+    for (const userQueueItem of userQueue) {
+      this.userQueue.splice(
+        this.userQueue.findIndex(
+          (value) => value.user.id === userQueueItem.user.id,
+        ),
+        1,
+      );
+    }
+
+    console.log(this.userQueue);
+
     const launchGame = () => {
       if (gametype == GametypeEnum.PONG) {
         this.logger.debug(
@@ -163,8 +176,8 @@ export class GameSessionService {
         this.handleGame(userQueue); // TODO : How to handle promise?
       }
     };
-    const timeDiffMs =
-      Date.now() - userQueue[0].entryTimestamp.getUTCMilliseconds();
+    // TODO : Test this
+    const timeDiffMs = Date.now() - userQueue[0].entryTimestamp.getTime();
     if (timeDiffMs > ms('60s')) {
       // If user waiting >= 2 , create room
       launchGame();
@@ -276,8 +289,16 @@ export class GameSessionService {
     };
 
     for (const userQueue of usersList) {
+      activeGameSession.lobbyData[userQueue.user.id] = {
+        ready: false,
+        color: null,
+        map: null,
+      };
+    }
+
+    for (const userQueue of usersList) {
       userQueue.client.emit(
-        'ingameComm',
+        'ingame-comm',
         this.omitSensitives(activeGameSession),
       );
     }
@@ -301,7 +322,7 @@ export class GameSessionService {
 
     activeGameSession.status = IngameStatus.LOBBY;
 
-    room.emit('ingameComm', this.omitSensitives(activeGameSession));
+    room.emit('ingame-comm', this.omitSensitives(activeGameSession));
 
     while (true) {
       // Wait all players to be ready
@@ -382,13 +403,19 @@ export class GameSessionService {
 
         activeGameSession.status = IngameStatus.IN_PROGRESS;
 
-        room.emit('ingameComm', this.omitSensitives(activeGameSession));
+        room.emit('ingame-comm', this.omitSensitives(activeGameSession));
 
         while (activeGameSession.status === IngameStatus.IN_PROGRESS) {
           room.emit('gamedata', activeGameSession.data);
+          await new Promise((resolve) =>
+            setTimeout(
+              resolve,
+              1000 / this.configService.getOrThrow('GAME_FPS'),
+            ),
+          );
         }
 
-        room.emit('ingameComm', this.omitSensitives(activeGameSession));
+        room.emit('ingame-comm', this.omitSensitives(activeGameSession));
 
         activeGameSession.status = IngameStatus.NEXT_ROUND_SELECT;
       }
@@ -402,13 +429,7 @@ export class GameSessionService {
 
     activeGameSession.status = IngameStatus.TERMINATED;
 
-    room.emit('ingameComm', this.omitSensitives(activeGameSession));
-
-    const gameHistory = await this.gameHistoryService.create({
-      // TODO
-      gametype: GametypeEnum.PONG,
-      players: usersList.map((userQueue) => userQueue.user.id),
-    });
+    room.emit('ingame-comm', this.omitSensitives(activeGameSession));
   }
 
   readyUser(client: Socket) {
@@ -419,7 +440,7 @@ export class GameSessionService {
       throw new AccessNotGrantedException();
     }
     activeGameSession.lobbyData[user.id].ready = true;
-    activeGameSession.room.emit('readyUser', user.id);
+    activeGameSession.room.emit('ready-user', user.id);
     this.logger.debug(`User ready : ${user.id} - ${user.email}`);
   }
 
@@ -431,7 +452,7 @@ export class GameSessionService {
       throw new AccessNotGrantedException();
     }
     activeGameSession.lobbyData[user.id].ready = false;
-    activeGameSession.room.emit('cancelReadyUser', user.id);
+    activeGameSession.room.emit('cancel-ready-user', user.id);
     this.logger.debug(`User cancel ready : ${user.id} - ${user.email}`);
   }
 
@@ -459,7 +480,7 @@ export class GameSessionService {
     if (activeGameSession.status === IngameStatus.LOBBY) {
       activeGameSession.lobbyData[user.id].color = gameConfigDto.color;
       activeGameSession.lobbyData[user.id].map = gameConfigDto.map;
-      activeGameSession.room.emit('gameConfig', {
+      activeGameSession.room.emit('game-config', {
         user: user.id,
         color: gameConfigDto.color,
         map: gameConfigDto.map,
@@ -471,7 +492,7 @@ export class GameSessionService {
       activeGameSession.lobbyData[user.id].color = gameConfigDto.color;
       activeGameSession.lobbyData[user.id].map = gameConfigDto.map;
       activeGameSession.lobbyData[user.id].ready = true;
-      activeGameSession.room.emit('gameConfig', {
+      activeGameSession.room.emit('game-config', {
         user: user.id,
         color: gameConfigDto.color,
         map: gameConfigDto.map,
@@ -533,9 +554,11 @@ export class GameSessionService {
     }
   }
 
-  gamedataWinner(client: Socket, data: string) {
+  async gamedataWinner(client: Socket, data: GamedataWinnerDto) {
     const user = client.handshake.auth.user as User;
-    const activeGameSession = this.getActiveGameSessionByUserId(user.id);
+    const activeGameSession = this.getActiveGameSessionByUserId<
+      PongData | ShootData
+    >(user.id);
 
     if (activeGameSession.status !== IngameStatus.IN_PROGRESS) {
       throw new AccessNotGrantedException();
@@ -544,19 +567,32 @@ export class GameSessionService {
     if (
       !activeGameSession.players
         .map((userQueue) => userQueue.user.id)
-        .includes(data)
+        .includes(data.winner)
     ) {
       throw new AccessNotGrantedException();
     }
 
     activeGameSession.winners.push(
       activeGameSession.players.find(
-        (userQueue) => userQueue.user.id === data,
+        (userQueue) => userQueue.user.id === data.winner,
       ) as UserQueue,
     );
 
-    activeGameSession.status = IngameStatus.INTERRUPTED;
+    if (!activeGameSession.data) {
+      throw new InternalServerException();
+    }
 
-    activeGameSession.room.emit('gamedataWinner', data);
+    await this.gameHistoryService.create({
+      gametype: activeGameSession.gametype,
+      players: [
+        activeGameSession.data.player1.user.id,
+        activeGameSession.data.player2.user.id,
+      ],
+      winner: data.winner,
+    });
+
+    activeGameSession.status = IngameStatus.INTERMISSION;
+
+    activeGameSession.room.emit('gamedata-winner', data);
   }
 }

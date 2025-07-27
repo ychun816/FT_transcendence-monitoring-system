@@ -29,9 +29,11 @@ export class AuthController {
   ) {
     const { user } = req;
 
-    res.setCookie(
-      ...this.authService.getCookieConfigTokenGenerationIntegrated(user),
-    );
+    const cookieResult =
+      this.authService.getCookieConfigTokenGenerationIntegrated(user);
+    res.setCookie(...cookieResult);
+
+    return cookieResult[1];
   }
 
   @HttpCode(HttpStatus.OK)
