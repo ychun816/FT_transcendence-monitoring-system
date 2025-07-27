@@ -1,6 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { AuthorityEnum } from './enums/authority.enum';
 import { Exclude } from 'class-transformer';
+import { object } from 'joi';
 
 @Entity()
 export class User {
@@ -34,7 +35,12 @@ export class User {
     type: 'text',
     default: '[]',
     transformer: {
-      from: (value: string) => JSON.parse(value) as string[],
+      from: (value: string) => {
+        if (typeof value === 'object') {
+          return JSON.parse(value) as string[];
+        }
+        return value;
+      },
       to: (value: string[]) => JSON.stringify(value),
     },
   })

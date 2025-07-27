@@ -37,7 +37,7 @@ const styles = {
     gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
     gap: '25px',
     width: '100%',
-    maxWidth: '1200px',
+    maxWidth: '1700px',
     zIndex: 2,
   },
   gameMode: {
@@ -143,18 +143,6 @@ export default function PongModesPage() {
       path: "/pong/1vs1-online",
       badge: "En Ligne"
     },
-    {
-      title: "2 vs 2 En Ligne",
-      description: "Formez une équipe avec un ami et affrontez d'autres duos en ligne. Coordination requise!",
-      path: "/pong/2vs2-online",
-      badge: "En Ligne"
-    },
-    {
-      title: "Tournoi de Pong",
-      description: "Participez à un tournoi éliminatoire avec jusqu'à 16 joueurs.",
-      path: "/pong/tournament",
-      badge: "En Ligne"
-    }
   ];
 
   return (
