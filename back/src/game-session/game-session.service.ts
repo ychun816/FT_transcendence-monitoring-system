@@ -525,6 +525,10 @@ export class GameSessionService {
 
     if (activeGameSession.data?.player1.user.id === user.id) {
       activeGameSession.data.player1.y = data.y;
+      if (data.ball) {
+        activeGameSession.data.ball.x = data.ball.x;
+        activeGameSession.data.ball.y = data.ball.y;
+      }
     } else if (activeGameSession.data?.player2.user.id === user.id) {
       activeGameSession.data.player2.y = data.y;
     } else {

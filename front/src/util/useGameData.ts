@@ -34,31 +34,65 @@ export interface GameData<TGametype> {
   tournamentHistory: [string, string][][];
 }
 
-export interface UseGameDataProps {}
+export interface GamedataPongDto {
+  y: number;
+  ball?: { x: number; y: number };
+}
 
-export function useGameData<TGametype>(props?: UseGameDataProps) {
+export enum OrientationEnum {
+  LEFT = "LEFT",
+  RIGHT = "RIGHT",
+  UP = "UP",
+  DOWN = "DOWN",
+}
+
+export interface GamedataShootDto {
+  x: number;
+  y: number;
+  orientation: OrientationEnum;
+  balls: { x: number; y: number }[];
+}
+
+export interface UseGameDataProps<TGamedata> {
+  sendGamedata: (send: (data: TGamedata) => void) => void;
+}
+
+export function useGameData<TGametype, TGamedata>(
+  params: UseGameDataProps<TGamedata>
+) {
   const client = io(
     process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:61001",
     { autoConnect: false, transports: ["websocket"] }
   );
 
+  const [isConnected, setIsConnected] = useState(false);
   const [registerQueueStatus, setRegisterQueueStatus] =
     useState<RegisterQueueStatus>(RegisterQueueStatus.NOT_REGISTERED);
   const [ingameData, setIngameData] = useState<GameData<TGametype> | null>(
     null
   );
+  const [status, setStatus] = useState<IngameStatus | null>(null);
   const [gamedata, setGamedata] = useState<TGametype | null>(null);
   const [readyUsers, setReadyUsers] = useState<string[]>([]);
+  const [winner, setWinner] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (ingameData && ingameData.status !== status) {
+      setStatus(ingameData.status);
+    }
+  }, [ingameData, status]);
 
   useEffect(() => {
     client.connect();
 
     client.on("connect", () => {
       console.log("Connected to server");
+      setIsConnected(true);
     });
 
     client.on("disconnect", () => {
       console.log("Disconnected from server");
+      setIsConnected(false);
     });
 
     client.on("game-session", (data: GameData<TGametype>) => {
@@ -76,6 +110,7 @@ export function useGameData<TGametype>(props?: UseGameDataProps) {
 
     client.on("gamedata", (data: TGametype) => {
       setGamedata(data);
+      params.sendGamedata((data) => client.emit("gamedata", data));
     });
 
     client.on("ready-user", (userid: string) => {
@@ -105,12 +140,23 @@ export function useGameData<TGametype>(props?: UseGameDataProps) {
       }
     );
 
-    client.on("gamedata-winner");
+    client.on("gamedata-winner", (data: { winner: string }) => {
+      setWinner(data.winner);
+    });
 
     return () => {
       client.disconnect();
     };
   }, []);
 
-  return { registerQueueStatus, ingameData, gamedata, readyUsers };
+  return {
+    isConnected,
+    registerQueueStatus,
+    ingameData,
+    gamedata,
+    readyUsers,
+    client,
+    status,
+    winner,
+  };
 }

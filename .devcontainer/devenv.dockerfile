@@ -16,7 +16,7 @@ RUN mkdir -p /etc/apt/keyrings
 
 RUN update-locale
 RUN adduser --shell /bin/zsh --disabled-password --gecos "" ${USERNAME}
-RUN chmod 777 -R /home/${USERNAME}
+# RUN chmod 777 -R /home/${USERNAME}
 RUN adduser ${USERNAME} sudo
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
