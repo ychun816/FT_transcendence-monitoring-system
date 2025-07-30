@@ -10,6 +10,7 @@ const ModeSelectionPage: React.FC = () => {
     show: false,
     warning: false
   });
+  const [showOnlineLoading, setShowOnlineLoading] = useState(false);
 
   const router = useRouter();
   
@@ -53,29 +54,74 @@ const ModeSelectionPage: React.FC = () => {
       warning: false
     });
 
-    timeoutRefs.current.push(
-      setTimeout(() => {
-        if (selectedMode === 'bot' || selectedMode === 'local') {
-          router.push(`/customisation?mode=${selectedMode}`);
-        } else {
-          router.push('/online-matchmaking');
-        }
-      }, 1500)
-    );
+    if (selectedMode === 'online') {
+      timeoutRefs.current.push(
+        setTimeout(() => {
+          setShowOnlineLoading(true);
+        }, 1500)
+      );
+    } else {
+      timeoutRefs.current.push(
+        setTimeout(() => {
+          if (selectedMode === 'bot') {
+            router.push('shoot/1vsbot');
+          } else if (selectedMode === 'local') {
+            router.push('shoot/1vs1local');
+          }
+        }, 1500)
+      );
+    }
+  };
+
+  const cancelOnlineSearch = () => {
+    setShowOnlineLoading(false);
+    setSelectedMode(null);
   };
 
   useEffect(() => {
-    // Définition du fond animé identique à GameCustomisation
     document.body.style.background = 
-      'linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c)',
+      'linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c)';
     document.body.style.backgroundSize = '400% 400%';
     document.body.style.margin = '0';
     document.body.style.padding = '0';
     document.body.style.minHeight = '100vh';
-})
+  }, []);
 
   return (
     <div style={styles.container}>
+      {/* Style pour l'animation du spinner */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+
+      {/* Popup de chargement pour le mode en ligne */}
+      {showOnlineLoading && (
+        <div style={styles.onlineLoadingOverlay}>
+          <div style={styles.onlineLoadingPopup}>
+            <h2 style={styles.onlineLoadingTitle}>Recherche d'un adversaire en ligne...</h2>
+            
+            <div style={styles.spinnerContainer}>
+              <div style={styles.spinner}></div>
+            </div>
+            
+            <p style={styles.onlineLoadingText}>
+              En attente d'un adversaire. Cela peut prendre quelques instants...
+            </p>
+            
+            <button 
+              style={styles.cancelButton} 
+              onClick={cancelOnlineSearch}
+            >
+              Annuler la recherche
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Notification standard */}
       <div style={styles.notificationContainer}>
         <div 
           style={{
@@ -281,6 +327,65 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'relative',
     height: '40px',
     marginBottom: '20px'
+  },
+  onlineLoadingOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2000,
+  },
+  onlineLoadingPopup: {
+    background: 'linear-gradient(135deg, #1a2a6c, #2a5298)',
+    borderRadius: '20px',
+    padding: '40px',
+    width: '90%',
+    maxWidth: '600px',
+    textAlign: 'center',
+    boxShadow: '0 0 40px rgba(0, 200, 255, 0.7)',
+    border: '2px solid #00ccff',
+  },
+  onlineLoadingTitle: {
+    fontSize: '2.2rem',
+    color: 'white',
+    marginBottom: '30px',
+    textShadow: '0 0 15px #00ccff',
+  },
+  onlineLoadingText: {
+    fontSize: '1.2rem',
+    color: '#ddd',
+    margin: '20px 0',
+  },
+  spinnerContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    margin: '30px 0',
+  },
+  spinner: {
+    width: '80px',
+    height: '80px',
+    border: '8px solid rgba(255, 255, 255, 0.1)',
+    borderTop: '8px solid #00ccff',
+    borderRadius: '50%',
+    animation: 'spin 1.5s linear infinite',
+  },
+  cancelButton: {
+    background: 'linear-gradient(to right, #ff3300, #cc0000)',
+    color: 'white',
+    border: 'none',
+    padding: '12px 30px',
+    fontSize: '1.1rem',
+    fontWeight: 'bold',
+    borderRadius: '30px',
+    cursor: 'pointer',
+    marginTop: '20px',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 15px rgba(255, 50, 0, 0.4)',
   }
 };
 
