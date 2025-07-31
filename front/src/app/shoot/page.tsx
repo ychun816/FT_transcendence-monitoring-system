@@ -1,4 +1,3 @@
-// src/app/page.tsx (Mode Selection Page)
 'use client'
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -89,7 +88,7 @@ const ModeSelectionPage: React.FC = () => {
 
   return (
     <div style={styles.container}>
-      {/* Style pour l'animation du spinner */}
+      {}
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -97,7 +96,7 @@ const ModeSelectionPage: React.FC = () => {
         }
       `}</style>
 
-      {/* Popup de chargement pour le mode en ligne */}
+      {}
       {showOnlineLoading && (
         <div style={styles.onlineLoadingOverlay}>
           <div style={styles.onlineLoadingPopup}>
