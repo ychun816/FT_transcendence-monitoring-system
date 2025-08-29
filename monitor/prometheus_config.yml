@@ -1,0 +1,36 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+
+# FORMAT 
+# Node exporter for system metrics (optional)
+# - job_name: 'node_exporter'
+#   static_configs:
+#     - targets: ['host.docker.internal:9100']
+#   scrape_interval: 1m
+
+#BACKEND
+# NestJS backend -> add when implement metrics
+  - job_name: 'transcendence-backend'
+    static_configs:
+      - targets: ['host.docker.internal:3001']  # Adjust port as needed
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+#FRONTEND
+  # Next.js frontend -> if add metrics @ frontend
+  # - job_name: 'transcendence-frontend'
+  #   static_configs:
+  #     - targets: ['host.docker.internal:3000']  # Adjust port as needed
+  #   metrics_path: '/api/metrics'
+  #   scrape_interval: 30s
+    
