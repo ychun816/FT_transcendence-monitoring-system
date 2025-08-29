@@ -254,6 +254,7 @@ docker-compose -f docker-compose.monitoring.yml down -v
 - [Grafana Tutorials](https://grafana.com/tutorials/)
 - [PromQL Query Language](https://prometheus.io/docs/prometheus/latest/querying/basics/)
 - [Node Exporter Metrics](https://github.com/prometheus/node_exporter)
+- [How Prometheus Monitoring works | Prometheus Architecture explained](https://www.youtube.com/watch?v=h4Sl21AKiDg)
 
 ## This monitoring setup demonstrates:
 - Modern observability practices
