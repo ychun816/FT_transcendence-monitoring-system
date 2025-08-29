@@ -94,7 +94,7 @@ docker-compose -f docker-compose.monitoring.yml ps
  Alerting path:
    Prometheus -> Alertmanager -> Email / Slack / PagerDuty / Webhooks
 ```
-- [COMPARE] AmazonCloud Steps Diagram:
+- [COMPARE] *Amazon CloudWatch* Steps Diagram:
 ```
 +--------------------+     push (agent/SDK)     +---------------------------+
 |  EC2 / ECS / EKS   | ------------------------>|  CloudWatch Metrics       |
