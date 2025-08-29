@@ -94,7 +94,7 @@ docker-compose -f docker-compose.monitoring.yml ps
  Alerting path:
    Prometheus -> Alertmanager -> Email / Slack / PagerDuty / Webhooks
 ```
-- [COMPARE] AmazonCloud Steps Diagram:
+- [COMPARE] *Amazon CloudWatch* Steps Diagram:
 ```
 +--------------------+     push (agent/SDK)     +---------------------------+
 |  EC2 / ECS / EKS   | ------------------------>|  CloudWatch Metrics       |
@@ -122,14 +122,14 @@ docker-compose -f docker-compose.monitoring.yml ps
 
 ```
 monitoring/
-├── docker-compose.monitoring.yml    # Main Docker Compose file
-├── prometheus_config.yml                   # Prometheus configuration ← Configures Prometheus server behavior
-├── alert_rules.yml                  # Alerting rules
+├── docker-compose.monitoring.yml     # Main Docker Compose file
+├── prometheus_config.yml             # Prometheus configuration ← Configures Prometheus server behavior
+├── alert_rules.yml                   # Alerting rules
 ├── grafana/
 │   └── provisioning/
 │       └── datasources/
-│           └── prometheus_data.yml       # Auto-configure Prometheus datasource ← Configures Grafana's connection to Prometheus
-└── README.md                       # This file
+│           └── prometheus_data.yml   # Auto-configure Prometheus datasource ← Configures Grafana's connection to Prometheus
+└── README.md                         # This file
 ```
 
 ## Configuration Files
