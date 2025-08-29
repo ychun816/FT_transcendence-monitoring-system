@@ -58,15 +58,15 @@ docker-compose -f docker-compose.monitoring.yml ps
 ```
 ### Prometheus Architecture 
 https://www.youtube.com/watch?v=h4Sl21AKiDg
-<img width="914" height="469" alt="image" src="https://github.com/user-attachments/assets/e79fd143-7474-41d5-9936-6ccad7c5f307" />
-<img width="893" height="415" alt="image" src="https://github.com/user-attachments/assets/3b3f0130-cb2d-4015-b26c-1f924f088ecc" />
-<img width="888" height="445" alt="image" src="https://github.com/user-attachments/assets/da1f08d8-41cf-4743-bbb5-d27705292181" />
-<img width="863" height="503" alt="image" src="https://github.com/user-attachments/assets/64828294-61b5-4b74-8efe-1ccf6255d7d8" />
-<img width="897" height="489" alt="image" src="https://github.com/user-attachments/assets/2e77f0f1-b7ad-4871-b952-30f0e89f3d2b" />
-<img width="899" height="479" alt="image" src="https://github.com/user-attachments/assets/8f458510-d16b-48bd-babd-b764ed107a4d" />
-<img width="882" height="506" alt="image" src="https://github.com/user-attachments/assets/6037fd40-88e9-4aca-a7da-b0a2028d3896" />
-<img width="892" height="458" alt="image" src="https://github.com/user-attachments/assets/c19fb175-98be-4346-9d84-819b7a454d7e" />
-
+<img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/e79fd143-7474-41d5-9936-6ccad7c5f307" />
+<img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/3b3f0130-cb2d-4015-b26c-1f924f088ecc" />
+<img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/da1f08d8-41cf-4743-bbb5-d27705292181" />
+<img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/64828294-61b5-4b74-8efe-1ccf6255d7d8" />
+<img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/2e77f0f1-b7ad-4871-b952-30f0e89f3d2b" />
+<img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/8f458510-d16b-48bd-babd-b764ed107a4d" />
+<img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/6037fd40-88e9-4aca-a7da-b0a2028d3896" />
+<img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/c19fb175-98be-4346-9d84-819b7a454d7e" />
+<img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/22d7b91b-4e71-40ba-bbbe-24f6208ff7a5" />
 
 
 ## File Structure
