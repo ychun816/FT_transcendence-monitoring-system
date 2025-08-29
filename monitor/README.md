@@ -79,12 +79,12 @@ https://www.youtube.com/watch?v=h4Sl21AKiDg
 ```
 monitoring/
 ├── docker-compose.monitoring.yml    # Main Docker Compose file
-├── prometheus.yml                   # Prometheus configuration ← Configures Prometheus server behavior
+├── prometheus_config.yml                   # Prometheus configuration ← Configures Prometheus server behavior
 ├── alert_rules.yml                  # Alerting rules
 ├── grafana/
 │   └── provisioning/
 │       └── datasources/
-│           └── prometheus.yml       # Auto-configure Prometheus datasource ← Configures Grafana's connection to Prometheus
+│           └── prometheus_data.yml       # Auto-configure Prometheus datasource ← Configures Grafana's connection to Prometheus
 └── README.md                       # This file
 ```
 
