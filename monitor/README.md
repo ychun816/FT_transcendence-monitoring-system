@@ -108,7 +108,7 @@ docker-compose -f docker-compose.monitoring.yml ps
 |  (Groups/Streams)  |                                   |  -> SNS/Actions    |
 +---------+----------+                                   +---------+----------+
           |                                                        |
-          | queries (Logs Insights)                                 |
+          | queries (Logs Insights)                                |
           v                                                        v
 +--------------------+                                    +-------------------+
 |  CloudWatch        |<----------- read metrics ----------|  Dashboards       |
