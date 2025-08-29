@@ -57,6 +57,11 @@ docker-compose -f docker-compose.monitoring.yml ps
                     └─────────────────┘
 ```
 ### Prometheus Architecture 
+
+This diagram illustrates the architecture of Prometheus and some of its ecosystem components:
+https://prometheus.io/docs/introduction/overview/
+<img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/d6e61ec4-f6a0-471a-9032-745a8546e7fe" />
+
 https://www.youtube.com/watch?v=h4Sl21AKiDg
 <img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/e79fd143-7474-41d5-9936-6ccad7c5f307" />
 <img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/3b3f0130-cb2d-4015-b26c-1f924f088ecc" />
