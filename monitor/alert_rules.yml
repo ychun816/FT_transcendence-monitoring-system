@@ -1,3 +1,8 @@
+# Defines WHEN to trigger alerts
+# Purpose: Contains the logic and conditions for alerts
+# Example: "If CPU > 80% for 5 minutes, trigger HighCPUUsage alert"
+# Used by: Prometheus (evaluates these rules)
+
 groups:
   - name: transcendence_alerts
     rules:
