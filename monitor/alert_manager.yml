@@ -1,0 +1,32 @@
+# Defines HOW to handle alerts once triggered
+# Purpose: Routes, groups, and sends notifications
+# Example: "Send HighCPUUsage alerts to Slack channel #alerts"
+# Used by: Alertmanager service (separate from Prometheus)
+
+# Prometheus (alert_rules.yml) → Detects issue → Sends to → Alertmanager (alertmanager.yml) → Sends notification
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alertmanager@yourdomain.com' #your email
+
+route:
+  group_by: ['alertname']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'web.hook'
+
+receivers:
+- name: 'web.hook'
+  webhook_configs:
+  - url: 'http://127.0.0.1:5001/'
+    
+# Optional: Email notifications
+# - name: 'email-notifications'
+#   email_configs:
+#   - to:  @@@@DOMAIN @@EMAIL
+#     subject: 'Alert: {{ .GroupLabels.alertname }}'
+#     body: |
+#       {{ range .Alerts }}
+#       Alert: {{ .Annotations.summary }}
+#       Description: {{ .Annotations.description }}
+#       {{ end }}

@@ -10,6 +10,10 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
+# alert manager
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
 
 # FORMAT 
 # Node exporter for system metrics (optional)
@@ -25,6 +29,7 @@ scrape_configs:
       - targets: ['host.docker.internal:3001']  # Adjust port as needed
     metrics_path: '/metrics'
     scrape_interval: 30s
+
 
 #FRONTEND
   # Next.js frontend -> if add metrics @ frontend
