@@ -35,12 +35,28 @@ docker-compose -f docker-compose.monitoring.yml ps
 ### Access Points
 - **Grafana Dashboard**: http://localhost:3001
   - Username: `admin`
-  - Password: `admin123`
+  - Password: `admin123` / `admin`
 - **Prometheus**: http://localhost:9090
 - **Node Exporter**: http://localhost:9100
 - **cAdvisor**: http://localhost:8080
 
 ## Architecture
+
+### Cross-Application Monitoring
+
+```
+# One Monitoring Stack monitors multiple applications:
+
+  Monitor Stack (independent)
+         ↓ monitors ↓
+┌──────────────────────────────┐
+│ Backend (3001)  | Pong Game  │ ← monitors
+│ Frontend (3000) | Web UI     │ ← monitors 
+│ Database (5432)              │ ← monitors
+│ Redis Cache (6379)           │ ← monitors
+└──────────────────────────────┘
+
+```
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -56,6 +72,14 @@ docker-compose -f docker-compose.monitoring.yml ps
                     │ (System Metrics)│
                     └─────────────────┘
 ```
+
+## Structure Enables:
+1. Monitor multiple services from one place
+2. Keep monitoring running during app deployments
+3. Team separation -> DevOps handles monitoring, developers handle apps
+4. Resource isolation -> monitoring doesn't compete with app resources
+
+
 ### Prometheus Architecture 
 
 - This diagram illustrates the architecture of Prometheus and some of its ecosystem components:
@@ -156,7 +180,57 @@ Configured to scrape metrics from:
 - cAdvisor (container metrics)
 - Your application (`/metrics` endpoint)
 
+
 ## Application Integration
+
+### Setting Up Application Metrics
+
+#### **Backend Metrics (NestJS) -> MUST**
+
+1. **Install Prometheus Client:**
+   ```bash
+   cd back/
+   npm install prom-client
+   ```
+
+2. **Create Metrics Module:**
+   - Create `src/metrics/metrics.service.ts`    -> Handles metric collection
+   - Create `src/metrics/metrics.controller.ts` -> Exposes `/metrics` endpoint
+   - Create `src/metrics/metrics.module.ts`     -> NestJS module
+   - Add to `app.module.ts`
+
+3. **Key Metrics to Implement:**
+   - HTTP requests (count, duration, errors)
+   - Game metrics (active games, completed games, players online)
+   - Authentication attempts (success/failure rates)
+   - System metrics (CPU, memory - automatic)
+
+4. **Integration Points:**
+   - HTTP interceptor for automatic request tracking
+   - Game service integration for game metrics
+   - Auth service integration for login metrics
+
+#### **Frontend Metrics (Next.js) - OPTIONAL**
+
+1. **Install Dependencies:**
+   ```bash
+   cd front/
+   npm install prom-client
+   ```
+
+2. **Create API Route:**
+   - Create `/api/metrics` endpoint
+   - Track page views and client-side errors
+
+#### **Testing**
+```bash
+# Test backend metrics
+curl http://localhost:3001/metrics
+
+# Test in Prometheus
+# Go to http://localhost:9090 and query: http_requests_total, pong_active_games
+```
+
 
 ### Adding Metrics to Your App
 
@@ -184,9 +258,9 @@ app.get('/metrics', async (req, res) => {
 });
 ```
 
-### Network Configuration
+### Network Config
 
-Ensure your application can communicate with the monitoring stack:
+Ensure application can communicate with the monitoring stack:
 
 ```yaml
 # In your main docker-compose.yml
@@ -262,7 +336,7 @@ chmod 777 ./grafana/provisioning/dashboards
 2. Check Prometheus targets: http://localhost:9090/targets
 3. Ensure network connectivity between containers
 
-### Useful Commands
+### Commands
 
 ```bash
 # View logs
