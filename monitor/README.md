@@ -1,9 +1,97 @@
-# Prometheus & Grafana Monitoring Setup
-
-**Super Basic Preview**
+# Super Basic Preview to Transcendence
 - [Starter Pack: Transcendence Structure & Languages used](https://hackmd.io/@QBrv51OvRPqs9dJjL2YIig/SybZ5n39ge)
 - [npm & yarn Explained](https://hackmd.io/@QBrv51OvRPqs9dJjL2YIig/SJpr-nnqgl)
 -> install ```yarn``` / ```node```
+
+```
+              [Developer pushes code]
+                          |
+                          v
+                  +----------------+
+                  | Source Control |
+                  +----------------+
+                          |
+        ===========================================
+        |       CI / Build Stage (Containers)     |
+        ===========================================
+        | Docker Container: Backend               |
+        | - Node.js + TypeScript                  |
+        | - Build APIs & run tests                |
+        +-----------------------------------------+
+        | Docker Container: Frontend              |
+        | - React/Vue build & component tests     |
+        +-----------------------------------------+
+        | Docker Container: Game Engine           |
+        | - Pong logic, multiplayer tests         |
+        +-----------------------------------------+
+                          |
+                +---------+---------+
+                |                   |
+                v                   v
+        [Package Docker Images]   [Test Results]
+                          |
+        ===========================================
+        |         CD / Deployment Stage          |
+        ===========================================
+        | Docker Container: Backend              |
+        | Docker Container: Frontend             |
+        | Docker Container: Game Engine          |
+        | Docker Container: Database (PostgreSQL)|
+        +-----------------------------------------+
+                          |
+                          v
+         ==========================================
+         |  Staging / Production Server          |
+         ==========================================
+         | Frontend: React/Vue                    |
+         | Backend: Node.js + TS                  |
+         | Game Engine: Pong Logic                |
+         | Database: PostgreSQL                   |
+         +----------------------------------------+
+                          |
+                          v
+        ================= USER FLOW =================
+        [User Browser]
+            |
+            | 1. Open website / login / start game
+            v
+        [Frontend]
+            |
+            | 2. Sends API / WebSocket requests
+            v
+        [Backend]
+            |
+            | 3. Check database & game state
+            v
+      +------------+------------------+
+      |            |                  |
+      v            v                  v
+[Database]   [Game Engine]       [Other Services]
+(PostgreSQL)  (Pong Logic)       (e.g., Chat)
+      |
+      | 4. Return data
+      v
+    [Backend]
+      |
+      | 5. Send updates to frontend
+      v
+    [Frontend displays UI/Game]
+      |
+      | 6. Prometheus collects metrics
+      v
+    [Grafana dashboards show stats]
+```
+
+✅ **Key Points:**
+
+1. **CI/CD + Docker** ensures every stage is automated and reproducible.
+2. **Frontend, Backend, Game, Database** are clearly separated but connected.
+3. **User workflow** is integrated with system architecture.
+4. **Monitoring** provides live feedback on system health.
+
+---
+
+# Prometheus & Grafana Monitoring Setup
 
 **ft_transcendence DevOps Module - Monitoring System**
 
