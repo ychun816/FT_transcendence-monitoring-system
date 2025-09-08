@@ -121,15 +121,18 @@ docker-compose -f docker-compose.monitoring.yml ps
 ## File Structure
 
 ```
-monitoring/
-├── docker-compose.monitoring.yml     # Main Docker Compose file
+monitor/
+├── .env                       
+├── docker-compose.yml                # Container orchestration
 ├── prometheus_config.yml             # Prometheus configuration ← Configures Prometheus server behavior
-├── alert_rules.yml                   # Alerting rules
-├── grafana/
-│   └── provisioning/
-│       └── datasources/
-│           └── prometheus_data.yml   # Auto-configure Prometheus datasource ← Configures Grafana's connection to Prometheus
-└── README.md                         # This file
+├── prometheus.yml                    # Prometheus config  
+├── alert_manager.yml                 # Alert manager config
+├── alert_rules.yml                   # Alert definitions/rules          
+└── grafana/
+    └── provisioning/
+        └── datasources/
+            ├── prometheus_data.yml   # Auto-configure Prometheus datasource ← Configures Grafana's 
+            └── prometheus.yml
 ```
 
 ## Configuration Files
@@ -324,3 +327,17 @@ docker-compose -f docker-compose.monitoring.yml down -v
 - Docker containerization
 - Infrastructure as Code
 - Production-ready monitoring
+
+## .env
+```
+# Grafana config
+GF_SECURITY_ADMIN_PASSWORD=admin
+
+# Alertmanager config (if needed)
+SMTP_SMARTHOST=localhost:587
+SMTP_FROM=alertmanager@yourdomain.com
+
+# Optional: Database passwords, API keys, etc.
+# POSTGRES_PASSWORD=your_secure_password
+# API_KEY=your_api_key
+```
