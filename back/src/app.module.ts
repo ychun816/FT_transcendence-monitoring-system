@@ -23,6 +23,7 @@ import { UtilsModule } from './utils/utils.module';
 import { AuthModule } from './auth/auth.module';
 import { GameHistoryModule } from './game-history/game-history.module';
 import { GameSessionModule } from './game-session/game-session.module';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -55,7 +56,7 @@ import { GameSessionModule } from './game-session/game-session.module';
       },
       resolvers: [
         { use: QueryResolver, options: ['lang'] },
-        { use: CookieResolver, options: ['lang', 'NEXT_LOCALE'] },
+        { use: CookieResolver, options: ['NEXT_LOCALE'] },
       ],
     }),
     ThrottlerModule.forRootAsync({
@@ -88,6 +89,7 @@ import { GameSessionModule } from './game-session/game-session.module';
     AuthModule,
     GameHistoryModule,
     GameSessionModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,5 +1,9 @@
 # Prometheus & Grafana Monitoring Setup
 
+**Super Basic Preview**
+-> install ```yarn``` / ```node```
+[npm & yarn Explained] (https://hackmd.io/@QBrv51OvRPqs9dJjL2YIig/SJpr-nnqgl)
+
 **ft_transcendence DevOps Module - Monitoring System**
 
 This repository contains a complete monitoring solution using Prometheus and Grafana for the ft_transcendence project, implementing modern DevOps observability practices.
@@ -41,6 +45,21 @@ docker-compose -f docker-compose.monitoring.yml ps
 - **cAdvisor**: http://localhost:8080
 
 ## Architecture
+
+### Whole Porject Overview
+```
+monitor/                # Monitoring Infrastructure
+├── prometheus          # Collects metrics FROM apps!
+├── grafana             # Visualizes collected metrics  
+└── alertmanager        # Sends notifications
+
+back/                   # NestJS Application  
+├── prom-client         # ← Install prometheus client (bridge) HERE -> generates metrics)
+└── /metrics endpoint   # Exposes metrics TO prometheus
+
+front/                  # Next.js Application
+└── (optional metrics)  # Client-side metrics (less important)
+```
 
 ### Cross-Application Monitoring
 
@@ -336,23 +355,6 @@ chmod 777 ./grafana/provisioning/dashboards
 2. Check Prometheus targets: http://localhost:9090/targets
 3. Ensure network connectivity between containers
 
-### Commands
-
-```bash
-# View logs
-docker-compose -f docker-compose.monitoring.yml logs -f prometheus
-docker-compose -f docker-compose.monitoring.yml logs -f grafana
-
-# Restart specific service
-docker-compose -f docker-compose.monitoring.yml restart prometheus
-
-# Stop all monitoring services
-docker-compose -f docker-compose.monitoring.yml down
-
-# Stop and remove volumes (reset data)
-docker-compose -f docker-compose.monitoring.yml down -v
-```
-
 ## Development Workflow
 
 ### Day-to-Day Usage
@@ -414,4 +416,146 @@ SMTP_FROM=alertmanager@yourdomain.com
 # Optional: Database passwords, API keys, etc.
 # POSTGRES_PASSWORD=your_secure_password
 # API_KEY=your_api_key
+```
+
+## Prometheus Client & Dependencies
+
+**Prometheus Client (`prom-client`)** is a Node.js library that enables your NestJS application to:
+- **Collect metrics** (HTTP requests, response times, custom game metrics)
+- **Expose metrics** via `/metrics` endpoint
+- **Format data** in Prometheus-compatible format
+
+It acts as a **bridge** between application and the Prometheus monitoring system, 
+When install a Package: (```npm install prom-client```)
+- package.json : Package name added to dependencies   -> ✅ Committed to Git
+- package-lock.json : Exact version information saved -> ✅ Committed to Git
+- node_modules/ : Actual package files downloaded     -> ❌ Ignored by Git
+
+### Cross-Computer Development:
+- ✅ Package names travel with Git repository
+- ✅ Anyone can recreate the exact environment with ```npm install```
+- ✅ Version-locked via ```package-lock.json``` for consistency
+- ❌ Actual package files don't bloat your repository
+- 🔄 Always run ```npm install``` after pulling changes that modify ```package.json```
+
+*On computer A:*
+```bash
+# Install the package
+npm install prom-client
+
+# Commit the dependency info (not the files)
+git add package.json package-lock.json
+git commit -m
+git push origin [branch-name]
+```
+
+*To another computer B:*
+```bash
+# Get your code changes
+git pull origin [branch-name]
+
+# Download ALL dependencies (including new ones)
+npm install
+```
+
+
+The Flow:
+```
+1. Backend generates metrics    (prom-client does this)
+2. Prometheus scrapes /metrics  (monitor/ does this)  
+3. Grafana visualizes data      (monitor/ does this)
+```
+
+
+Analogy: 
+```
+Kitchen (Backend):
+- Has sensors (prom-client) 
+- Measures temperature, cooking times, orders
+- Reports data: "50 orders/hour, 2min avg cook time"
+
+Monitor Room (monitor/):  
+- Collects data from kitchen sensors
+- Shows graphs and alerts
+- Doesn't cook food, just monitors
+
+Dining Room (Frontend):
+- Could track customer satisfaction
+- Less critical than kitchen metrics
+```
+
+
+
+
+
+
+
+
+
+
+## test commands 
+
+```bash
+### GENERAL COMMANDS ###
+# Running containers only
+docker ps
+
+# All containers (running + stopped)  
+docker ps -a
+
+# Specific project containers
+docker-compose ps
+
+# See container resource usage
+docker stats
+
+### STOP 
+# Stop specific container
+docker stop <container-name>
+
+# Stop all running containers
+docker stop $(docker ps -q)
+
+# Stop docker-compose project
+docker-compose down
+
+### REMOVE ###
+# Remove stopped containers
+docker container prune
+
+# Remove specific container
+docker rm <container-name>
+
+# Remove ALL stopped containers
+docker rm $(docker ps -aq)
+
+
+### OTHERS COMMANDS ###
+# View logs
+docker-compose -f docker-compose.monitoring.yml logs -f prometheus
+docker-compose -f docker-compose.monitoring.yml logs -f grafana
+
+# Restart specific service
+docker-compose -f docker-compose.monitoring.yml restart prometheus
+
+# Stop all monitoring services
+docker-compose -f docker-compose.monitoring.yml down
+
+# Stop and remove volumes (reset data)
+docker-compose -f docker-compose.monitoring.yml down -v
+
+
+### CHECK PACKAGES ###
+# Install all dependencies
+npm install
+
+# Install specific package
+npm install package-name
+
+# Check what's installed
+npm list
+
+# Check for outdated packages
+npm outdated
+
 ```
