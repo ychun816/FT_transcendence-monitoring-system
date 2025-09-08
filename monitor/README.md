@@ -1,8 +1,9 @@
 # Prometheus & Grafana Monitoring Setup
 
 **Super Basic Preview**
+- [Starter Pack: Transcendence Structure & Languages used](https://hackmd.io/@QBrv51OvRPqs9dJjL2YIig/SybZ5n39ge)
+- [npm & yarn Explained](https://hackmd.io/@QBrv51OvRPqs9dJjL2YIig/SJpr-nnqgl)
 -> install ```yarn``` / ```node```
-[npm & yarn Explained] (https://hackmd.io/@QBrv51OvRPqs9dJjL2YIig/SJpr-nnqgl)
 
 **ft_transcendence DevOps Module - Monitoring System**
 
