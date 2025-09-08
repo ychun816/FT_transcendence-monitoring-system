@@ -4,82 +4,84 @@
 -> install ```yarn``` / ```node```
 
 ```
-              [Developer pushes code]
-                          |
-                          v
-                  +----------------+
-                  | Source Control |
-                  +----------------+
-                          |
-        ===========================================
-        |       CI / Build Stage (Containers)     |
-        ===========================================
-        | Docker Container: Backend               |
-        | - Node.js + TypeScript                  |
-        | - Build APIs & run tests                |
-        +-----------------------------------------+
-        | Docker Container: Frontend              |
-        | - React/Vue build & component tests     |
-        +-----------------------------------------+
-        | Docker Container: Game Engine           |
-        | - Pong logic, multiplayer tests         |
-        +-----------------------------------------+
-                          |
-                +---------+---------+
-                |                   |
-                v                   v
-        [Package Docker Images]   [Test Results]
-                          |
-        ===========================================
-        |         CD / Deployment Stage          |
-        ===========================================
-        | Docker Container: Backend              |
-        | Docker Container: Frontend             |
-        | Docker Container: Game Engine          |
-        | Docker Container: Database (PostgreSQL)|
-        +-----------------------------------------+
-                          |
-                          v
-         ==========================================
-         |  Staging / Production Server          |
-         ==========================================
-         | Frontend: React/Vue                    |
-         | Backend: Node.js + TS                  |
-         | Game Engine: Pong Logic                |
-         | Database: PostgreSQL                   |
-         +----------------------------------------+
-                          |
-                          v
-        ================= USER FLOW =================
-        [User Browser]
-            |
-            | 1. Open website / login / start game
-            v
-        [Frontend]
-            |
-            | 2. Sends API / WebSocket requests
-            v
-        [Backend]
-            |
-            | 3. Check database & game state
-            v
-      +------------+------------------+
-      |            |                  |
-      v            v                  v
-[Database]   [Game Engine]       [Other Services]
-(PostgreSQL)  (Pong Logic)       (e.g., Chat)
-      |
-      | 4. Return data
-      v
-    [Backend]
-      |
-      | 5. Send updates to frontend
-      v
-    [Frontend displays UI/Game]
-      |
-      | 6. Prometheus collects metrics
-      v
-    [Grafana dashboards show stats]
+┌───────────────────────┐
+│ Developer Pushes Code │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│   Source Control      │
+│  (GitHub / GitLab)    │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────────────────────────────┐
+│           CI / Build Stage (Containers)       │
+├───────────────┬───────────────┬───────────────┤
+│ Backend       │ Frontend      │ Game Engine   │
+│ Node.js + TS  │ React / Vue   │ Pong Logic    │
+│ Build & Test  │ Build & Test  │ Multiplayer   │
+└───────────────┴───────────────┴───────────────┘
+            │                            │
+            ▼                            ▼
+┌─────────────────────────────┐   ┌────────────────────┐
+│ Package Docker Images       │   │ Test Results       │
+└─────────────┬───────────────┘   └────────────────────┘
+              │
+              ▼
+┌───────────────────────────────────────────────┐
+│           CD / Deployment Stage               │
+├───────────────┬───────────────┬───────────────┤
+│ Backend       │ Frontend      │ Game Engine   │
+│ Node.js + TS  │ React / Vue   │ Pong Logic    │
+├───────────────┴───────────────┴───────────────┤
+│ Database (PostgreSQL)                         │
+└───────────────────────────────────────────────┘
+              │
+              ▼
+┌───────────────────────────────────────────────┐
+│       Staging / Production Server             │
+├───────────────┬───────────────┬───────────────┤
+│ Frontend      │ Backend       │ Game Engine   │
+│ React / Vue   │ Node.js + TS  │ Pong Logic    │
+├───────────────┴───────────────┴───────────────┤
+│ Database (PostgreSQL)                         │
+└───────────────────────────────────────────────┘
+              │
+              ▼
+=================================================
+│          USER FLOW                            │
+=================================================
+┌───────────────────────────────────────────────┐
+│ Browser       │ Frontend      │ Backend       │
+│ Opens site    │ Sends API /   │ Checks DB &   │
+│ / Start game  │ WebSocket     │ Game state    │
+└───────────────┴───────────────┴───────────────┘
+               │
+               ▼
+┌───────────────────────────────────────────────┐
+│ Game Engine / Database / Other Services       │
+│ Pong Logic          PostgreSQL / Chat         │
+└───────────────────────────────────────────────┘
+               │
+               ▼
+┌───────────────────────────────────────────────┐
+│ Backend Sends Updates to Frontend             │
+│ Frontend Displays UI / Game                   │
+└───────────────────────────────────────────────┘
+               │
+               ▼
+┌──────────────────────────────-───-──────────────┐
+│ Monitoring / Metrics                            │
+├───────────────────────────┬───--────────────────┤
+│ Prometheus (Collector)    │ Grafana (Dashboard) │
+│ - Scrapes Backend/API     │ - Visualizes metrics│
+│ - Scrapes Game Engine     │ - Player stats      │
+│ - Scrapes Database        │ - System health     │
+├─────────────-─────────────┴────────────--─----──┤
+│ Node Exporter / cAdvisor (System Metrics)       │
+│ - CPU / Memory / Disk / Network                 │
+└─────────────────────────────────────────-─----──┘
 ```
 
 ✅ **Key Points:**
