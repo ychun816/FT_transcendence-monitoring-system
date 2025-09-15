@@ -13,9 +13,9 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FindAllUsersDto } from './dto/find-all-users.dto';
-import { Roles } from 'src/decorators/roles.decorator';
+import { Roles } from '../decorators/roles.decorator';
 import { AuthorityEnum } from './enums/authority.enum';
-import { RequestWithUser } from 'src/auth/interfaces/request-with-user.interface';
+import { RequestWithUser } from '../auth/interfaces/request-with-user.interface';
 import { Throttle } from '@nestjs/throttler';
 
 @Controller('users')
