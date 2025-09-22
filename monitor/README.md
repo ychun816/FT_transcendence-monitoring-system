@@ -223,7 +223,65 @@ front/                  # Next.js Application
 <img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/c19fb175-98be-4346-9d84-819b7a454d7e" />
 <img width="914" height="506" alt="image" src="https://github.com/user-attachments/assets/22d7b91b-4e71-40ba-bbbe-24f6208ff7a5" />
 
-- Steps Diagram:
+### Workflow/Steps Diagram:
+- Complete Monitoring Architecture (Metrics + Logs):
+```
+                              YOUR APPLICATIONS
+                    ┌─────────────────────────────────────┐
+                    │  Backend (NestJS) + Frontend + Game │
+                    │  - HTTP APIs      - WebSockets      │
+                    │  - Authentication - Game Logic      │
+                    │  - Database ops   - User sessions   │
+                    └─────────────┬───────────┬───────────┘
+                                  │           │
+                    METRICS       │           │        LOGS
+                   (numbers)      │           │    (events/text)
+                                  │           │
+                                  ▼           ▼
+        ┌─────────────────────────────────────────────────────────────┐
+        │                    MONITORING STACK                         │
+        │                                                             │
+        │  ┌──────────────────┐              ┌──────────────────────┐ │
+        │  │   METRICS SIDE   │              │      LOGS SIDE       │ │
+        │  │                  │              │                      │ │
+        │  │ ┌──────────────┐ │              │ ┌──────────────────┐ │ │
+        │  │ │ Prometheus   │ │   alerts     │ │    Logstash      │ │ │
+        │  │ │ :9090        │ │◄─────────────┤ │ :5000 :5044      │ │ │
+        │  │ │ - Scrape     │ │              │ │ - Process logs   │ │ │
+        │  │ │ - Store TSDB │ │              │ │ - Transform data │ │ │
+        │  │ │ - Rules/Alert│ │              │ │ - Filter events  │ │ │
+        │  │ └──────┬───────┘ │              │ └─────────┬────────┘ │ │
+        │  │        │         │              │           │          │ │
+        │  │        │ PromQL  │              │           │ indexed  │ │
+        │  │        ▼         │              │           ▼          │ │
+        │  │ ┌──────────────┐ │              │ ┌──────────────────┐ │ │
+        │  │ │  Grafana     │ │              │ │  Elasticsearch   │ │ │
+        │  │ │  :3000       │ │              │ │  :9200           │ │ │
+        │  │ │ - Dashboards │ │              │ │ - Index logs     │ │ │
+        │  │ │ - Metrics viz│ │◄─────────────┤►│ - Full-text      │ │ │
+        │  │ │ - Alerts UI  │ │   combined   │ │ - Aggregations   │ │ │
+        │  │ └──────────────┘ │   alerts     │ └─────────┬────────┘ │ │
+        │  │                  │              │           │          │ │
+        │  └──────────────────┘              │           │ queries  │ │
+        │                                    │           ▼          │ │
+        │  ┌──────────────────┐              │ ┌──────────────────┐ │ │
+        │  │  AlertManager    │              │ │     Kibana       │ │ │
+        │  │  :9093           │              │ │     :5601        │ │ │
+        │  │ - Route alerts   │              │ │ - Log search     │ │ │
+        │  │ - Notifications  │              │ │ - Log dashboards │ │ │
+        │  │ - Email/Slack    │              │ │ - Error analysis │ │ │
+        │  │ └──────────────────┘              │ └──────────────────┘ │ │
+        │                                    │                      │ │
+        │                                    └──────────────────────┘ │
+        └─────────────────────────────────────────────────────────────┘
+
+        UNIFIED OBSERVABILITY:
+        • Metrics (Prometheus → Grafana): "WHAT happened? How much? How fast?"
+        • Logs (Logstash → Elasticsearch → Kibana): "WHY did it happen? What exactly?"
+        • Alerts (Both systems): Proactive notifications via AlertManager
+        • Cross-correlation: Link metrics spikes to specific log events
+``` 
+- Metrics (prometheus + grafana): 
 ```
 +------------------+         pull/scrape          +--------------------------+
 |  Node Exporter   | <----------------------------|      Prometheus Server   |
@@ -243,6 +301,45 @@ front/                  # Next.js Application
  Alerting path:
    Prometheus -> Alertmanager -> Email / Slack / PagerDuty / Webhooks
 ```
+
+- Log (ELK):
+```
+ +-------------------+    HTTP POST/TCP    +---------------------------+
+ | Your Applications | ------------------->|        Logstash           |
+ | - Backend APIs    |   logs (JSON/text)  |  - Input (HTTP:5000)     |
+ | - Frontend errors |                     |  - Input (TCP:5044)      |
+ | - Game events     |                     |  - Filter & Transform     |
+ | - Auth logs       |                     |  - Output to ES           |
+ +-------------------+                     +------------+--------------+
+          |                                             |
+          | structured logs                             | parsed logs
+          v                                             v
+ +-------------------+                        +--------------------------+
+ | File/Syslog       |                        |      Elasticsearch       |
+ | - Docker logs     | ---------------------->|  - Index & store logs    |
+ | - System logs     |   file beats/inputs    |  - Full-text search      |
+ | - App log files   |                        |  - Aggregations          |
+ +-------------------+                        |  - REST API (:9200)      |
+                                              +------------+-------------+
+                                                           |
+                                              search & aggregate queries  
+                                                           v
+                                              +-------------------------+
+                                              |         Kibana          |
+                                              | - Discover (logs)       |
+                                              | - Visualize (charts)    |
+                                              | - Dashboard (overview)  |
+                                              | - Alerts (watcher)      |
+                                              | - Web UI (:5601)        |
+                                              +-------------------------+
+
+ Log Processing Flow:
+   Application Logs -> Logstash -> Elasticsearch -> Kibana
+   
+ Search & Analysis:
+   Kibana -> Elasticsearch -> Query Results -> Visualizations
+```
+
 - [COMPARE] *Amazon CloudWatch* Steps Diagram:
 ```
 +--------------------+     push (agent/SDK)     +---------------------------+
