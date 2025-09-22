@@ -1,0 +1,11 @@
+# Logstash Configuration
+# This file configures the Logstash service itself
+
+http.host: "0.0.0.0"
+xpack.monitoring.enabled: false
+
+# Pipeline configuration
+path.config: "/usr/share/logstash/pipeline"
+
+# Elasticsearch connection for monitoring (optional)
+# xpack.monitoring.elasticsearch.hosts: ["http://elasticsearch:9200"]

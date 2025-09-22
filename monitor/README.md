@@ -75,12 +75,17 @@
                │
                ▼
 ┌──────────────────────────────-───-──────────────┐
-│ Monitoring / Metrics                            │
+│ Monitoring / Metrics & Logs                     │
 ├───────────────────────────┬───--────────────────┤
 │ Prometheus (Collector)    │ Grafana (Dashboard) │
 │ - Scrapes Backend/API     │ - Visualizes metrics│
 │ - Scrapes Game Engine     │ - Player stats      │
 │ - Scrapes Database        │ - System health     │
+├─────────────-─────────────┼────────────--─----──┤
+│ ELK Stack (Logs)          │ Kibana (Log Viewer) │
+│ - Logstash (Processor)    │ - Search & analyze  │
+│ - Elasticsearch (Storage) │ - Error tracking    │
+│ - Collects app logs       │ - Debug & audit     │
 ├─────────────-─────────────┴────────────--─----──┤
 │ Node Exporter / cAdvisor (System Metrics)       │
 │ - CPU / Memory / Disk / Network                 │
@@ -140,19 +145,26 @@ docker-compose -f docker-compose.monitoring.yml ps
 
 ## Architecture
 
-### Whole Porject Overview
+### Whole Project Overview
 ```
 monitor/                # Monitoring Infrastructure
 ├── prometheus          # Collects metrics FROM apps!
 ├── grafana             # Visualizes collected metrics  
-└── alertmanager        # Sends notifications
+├── alertmanager        # Sends notifications
+├── elasticsearch       # Stores & indexes logs (ELK)
+├── kibana              # Visualizes logs (ELK)  
+└── logstash/           # Processes & transforms logs (ELK)
+    ├── config/         # Logstash service configuration
+    └── pipeline/       # Log processing pipeline (Input→Filter→Output)
 
 back/                   # NestJS Application  
 ├── prom-client         # ← Install prometheus client (bridge) HERE -> generates metrics)
-└── /metrics endpoint   # Exposes metrics TO prometheus
+├── /metrics endpoint   # Exposes metrics TO prometheus
+└── logging integration # ← Send logs TO logstash (HTTP/TCP)
 
 front/                  # Next.js Application
-└── (optional metrics)  # Client-side metrics (less important)
+├── (optional metrics)  # Client-side metrics (less important)
+└── (optional logging)  # Client-side error logs (less important)
 ```
 
 ### Cross-Application Monitoring
@@ -260,16 +272,21 @@ front/                  # Next.js Application
 ```
 monitor/
 ├── .env                       
-├── docker-compose.yml                # Container orchestration
+├── docker-compose.yml                # Container orchestration (6 services: Prometheus+Grafana+AlertManager+ELK)
 ├── prometheus_config.yml             # Prometheus configuration ← Configures Prometheus server behavior
 ├── prometheus.yml                    # Prometheus config  
 ├── alert_manager.yml                 # Alert manager config
-├── alert_rules.yml                   # Alert definitions/rules          
-└── grafana/
-    └── provisioning/
-        └── datasources/
-            ├── prometheus_data.yml   # Auto-configure Prometheus datasource ← Configures Grafana's 
-            └── prometheus.yml
+├── alert_rules.yml                   # Alert definitions/rules  
+├── grafana/                          # Grafana provisioning
+│   └── provisioning/
+│       └── datasources/
+│           ├── prometheus_data.yml   # Auto-configure Prometheus datasource ← Configures Grafana's 
+│           └── prometheus.yml
+└── logstash/                         # ELK Stack configuration
+    ├── config/
+    │   └── logstash.yml              # Logstash service configuration
+    └── pipeline/
+        └── logstash.conf             # Log processing pipeline (Input→Filter→Output)
 ```
 
 ## Configuration Files

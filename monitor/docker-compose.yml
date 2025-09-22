@@ -76,6 +76,22 @@ services:
     networks:
       - monitoring
 
+  # Step 3: Logstash - processes and transforms logs
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.15.0
+    container_name: logstash
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline  # Pipeline configuration
+      - ./logstash/config:/usr/share/logstash/config      # Service configuration
+    ports:
+      - "5044:5044"  # TCP input for logs
+      - "5000:5000"  # HTTP input for logs  
+      - "9600:9600"  # Logstash monitoring API
+    depends_on:
+      - elasticsearch
+    networks:
+      - monitoring
+
 networks:
   monitoring:
     driver: bridge
