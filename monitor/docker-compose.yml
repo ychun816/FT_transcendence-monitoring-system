@@ -48,7 +48,7 @@ services:
     networks:
       - monitoring
 
-  # Step 1: Elasticsearch - stores and indexes logs
+  # STEP 1) Elasticsearch -> stores and indexes logs
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
     container_name: elasticsearch
@@ -57,40 +57,29 @@ services:
       - ES_JAVA_OPTS=-Xms512m -Xmx512m # Limit memory usage to 512MB
       - xpack.security.enabled=false    # Disable security for simplicity
     ports:
-      - "9200:9200"  # REST API port
+      - "9200:9200"  # REST API port? 
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
       - monitoring
 
-  # Step 2: Kibana - web interface for viewing logs
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.15.0
-    container_name: kibana
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200  # Connect to Elasticsearch
-    ports:
-      - "5601:5601"  # Kibana web interface
-    depends_on:
-      - elasticsearch
-    networks:
-      - monitoring
+  # STEP 2) Kibana -> web interface for viewing logs
+  # kibana:
+  #   image: docker.elastic.co/kibana/kibana:8.15.0
+  #   container_name: kibana
+  #   depends_on:
+  #     - elasticsearch
+  #   networks:
+  #     - monitoring
 
-  # Step 3: Logstash - processes and transforms logs
-  logstash:
-    image: docker.elastic.co/logstash/logstash:8.15.0
-    container_name: logstash
-    volumes:
-      - ./logstash/pipeline:/usr/share/logstash/pipeline  # Pipeline configuration
-      - ./logstash/config:/usr/share/logstash/config      # Service configuration
-    ports:
-      - "5044:5044"  # TCP input for logs
-      - "5000:5000"  # HTTP input for logs  
-      - "9600:9600"  # Logstash monitoring API
-    depends_on:
-      - elasticsearch
-    networks:
-      - monitoring
+  # STEP 3) Logstash -> processes and transforms logs
+  # logstash:
+  #   image: docker.elastic.co/logstash/logstash:8.15.0
+  #   container_name: logstash
+  #   depends_on:
+  #     - elasticsearch
+  #   networks:
+  #     - monitoring
 
 networks:
   monitoring:
@@ -99,3 +88,27 @@ networks:
 volumes:
   elasticsearch_data:
     driver: local
+
+
+#### QUICK NOTES #####
+
+#depends_on: #dependencies (start after...)
+
+#networks: 
+# 1 Defines which Docker networks the container belongs to
+# 2 All services on the monitoring network can communicate with each other using container names as hostnames
+# 3 Isolates traffic from other containers and the host unless ports are explicitly exposed
+
+#binding:
+# -Port binding: HOST_PORT:CONTAINER_PORT allows outside traffic to reach the container.
+# -Volume binding: HOST_PATH:CONTAINER_PATH allows host files to be accessed and modified by the container, or container data to persist outside the container.
+
+
+# environment: Configure container runtime variables.
+# volumes: Persist data or map configs.
+# ports: Expose container services to the host.
+# command: Customize container startup behavior.
+# depends_on: Define startup order dependencies.
+# networks: Control inter-service communication and isolation.
+# binding: Links host resources (ports or files) to container resources.
+######################

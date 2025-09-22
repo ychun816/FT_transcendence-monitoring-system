@@ -605,6 +605,8 @@ chmod 777 ./grafana/provisioning/dashboards
 - [Node Exporter Metrics](https://github.com/prometheus/node_exporter)
 - [Grafana Tutorials](https://grafana.com/tutorials/)
 
+- [logstash config file examples](https://www.elastic.co/docs/reference/logstash/config-examples)
+
 
 ## This monitoring setup demonstrates:
 - Modern observability practices
