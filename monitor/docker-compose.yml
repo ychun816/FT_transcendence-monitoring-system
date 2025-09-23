@@ -64,13 +64,17 @@ services:
       - monitoring
 
   # STEP 2) Kibana -> web interface for viewing logs
-  # kibana:
-  #   image: docker.elastic.co/kibana/kibana:8.15.0
-  #   container_name: kibana
-  #   depends_on:
-  #     - elasticsearch
-  #   networks:
-  #     - monitoring
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - monitoring
 
   # STEP 3) Logstash -> processes and transforms logs
   # logstash:
