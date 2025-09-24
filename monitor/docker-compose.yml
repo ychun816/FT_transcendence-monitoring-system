@@ -90,6 +90,12 @@ services:
       - "127.0.0.1:15044:5044" # Beats input remapped to host port 15044 (dev-only)
     depends_on:
       - elasticsearch
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9600/_node/pipelines || exit 1"]
+      interval: 10s
+      timeout: 5s # Maximum time to wait for the health check to succeed before marking it as failed.
+      retries: 10 # Number of consecutive failures required before the container is considered unhealthy.
+      start_period: 20s # Initial time to wait after container starts before starting health checks
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
       - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
@@ -115,7 +121,10 @@ services:
       # - ./certs/filebeat.crt:/usr/share/filebeat/certs/filebeat.crt:ro
       # - ./certs/filebeat.key:/usr/share/filebeat/certs/filebeat.key:ro
     depends_on:
-      - logstash
+      logstash:
+        condition: service_healthy
+    # Ensures this service starts only after the 'logstash' service is healthy.
+    # "service_healthy" means it waits for logstash's healthcheck to pass.
     networks:
       - monitoring
 
@@ -149,4 +158,13 @@ volumes:
 # depends_on: Define startup order dependencies.
 # networks: Control inter-service communication and isolation.
 # binding: Links host resources (ports or files) to container resources.
+
+# healthcheck:
+# The command used to test if the container is healthy.
+# - "CMD-SHELL" allows running a shell command.
+# - Here it tries to GET the URL http://127.0.0.1:9600/_node/pipelines using curl.
+# - If curl fails, the command exits with code 1, signaling the container is unhealthy.
+
+# condition: service_healthy -> fixed keyword! 
+
 ######################

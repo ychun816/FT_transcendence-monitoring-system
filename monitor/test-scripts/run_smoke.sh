@@ -121,10 +121,31 @@ if $DO_RESTART; then
   run_compose -f "$COMPOSE_FILE" up -d --force-recreate logstash filebeat
 
   echo "Waiting up to ${WAIT_TIMEOUT}s for logstash and filebeat to become running..."
+  # Wait for Logstash to report healthy via its Docker healthcheck (if present)
+  echo "Waiting up to ${WAIT_TIMEOUT}s for logstash to report healthy via docker health status..."
+  elapsed=0; interval=3; status="unknown"
+  while [ $elapsed -lt $WAIT_TIMEOUT ]; do
+    # Use docker inspect directly for portability (works with both docker-compose and docker CLI)
+    status=$(docker inspect --format='{{.State.Health.Status}}' logstash 2>/dev/null || echo unknown)
+    if [[ "$status" == "healthy" ]]; then
+      echo "logstash is healthy"
+      break
+    fi
+    echo "logstash health: $status (waiting)..."
+    sleep $interval
+    elapsed=$((elapsed + interval))
+  done
+
+  if [[ "$status" != "healthy" ]]; then
+    echo "Timed out waiting for logstash to become healthy (status=$status). Proceeding, but startup races may occur."
+  fi
+
+  # Ensure filebeat container is running (not strictly tied to Logstash health, but useful to confirm startup)
+  echo "Waiting up to ${WAIT_TIMEOUT}s for filebeat container to be running..."
   for i in $(seq 1 $WAIT_TIMEOUT); do
-    status=$(run_compose -f "$COMPOSE_FILE" ps --services --filter "status=running" | grep -E "^(logstash|filebeat)$" | wc -l || true)
-    if [[ "$status" -ge 2 ]]; then
-      echo "Both containers are running"
+    fb_running=$(run_compose -f "$COMPOSE_FILE" ps --services --filter "status=running" | grep -E "^filebeat$" | wc -l || true)
+    if [[ "$fb_running" -ge 1 ]]; then
+      echo "filebeat is running"
       break
     fi
     sleep 1
