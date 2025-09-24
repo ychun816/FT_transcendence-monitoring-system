@@ -20,6 +20,16 @@ services:
     networks:
       - monitoring
 
+  monitor_debug:
+    image: alpine:3.18
+    container_name: monitor_debug
+    command: ["sh", "-c", "sleep infinity"]
+    tty: true
+    stdin_open: true
+    profiles: ["debug"]
+    networks:
+      - monitoring
+
   alertmanager:
     image: prom/alertmanager:latest
     container_name: alertmanager
@@ -90,7 +100,7 @@ services:
       - "127.0.0.1:15044:5044" # Beats input remapped to host port 15044 (dev-only)
     depends_on:
       - elasticsearch
-    healthcheck:
+    healthcheck:   ###############
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9600/_node/pipelines || exit 1"]
       interval: 10s
       timeout: 5s # Maximum time to wait for the health check to succeed before marking it as failed.
@@ -166,5 +176,20 @@ volumes:
 # - If curl fails, the command exits with code 1, signaling the container is unhealthy.
 
 # condition: service_healthy -> fixed keyword! 
+
+
+
+#### TRYING FOR LOCAL DEBUG! REMOVE FOR CI/PROD
+  # monitor_debug:
+  #   image: alpine:3.18
+  #   container_name: monitor_debug
+  #   command: ["sh", "-c", "sleep infinity"]
+  #   tty: true
+  #   stdin_open: true
+  #   profiles: ["debug"]
+  #   networks:
+  #     - monitoring
+####
+
 
 ######################

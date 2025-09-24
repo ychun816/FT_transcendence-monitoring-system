@@ -137,7 +137,8 @@ if $DO_RESTART; then
   done
 
   if [[ "$status" != "healthy" ]]; then
-    echo "Timed out waiting for logstash to become healthy (status=$status). Proceeding, but startup races may occur."
+    echo "Timed out waiting for logstash to become healthy (status=$status). Failing fast for CI/automation."
+    exit 2
   fi
 
   # Ensure filebeat container is running (not strictly tied to Logstash health, but useful to confirm startup)

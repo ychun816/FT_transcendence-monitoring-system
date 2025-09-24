@@ -182,7 +182,6 @@ front/                  # Next.js Application
 └──────────────────────────────┘
 
 ```
-
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Your Pong     │    │   Prometheus    │    │    Grafana      │
@@ -768,4 +767,78 @@ npm list
 # Check for outdated packages
 npm outdated
 
+```
+
+## Debug container (optional)
+
+For quick, in-network diagnostics we provide an opt-in debug container `monitor_debug` (uses `alpine` by default). This is intended for local development only and should not be started in CI or production.
+
+Compose snippet (already added to `docker-compose.yml`):
+
+```yaml
+  monitor_debug:
+    image: alpine:3.18
+    container_name: monitor_debug
+    command: ["sh", "-c", "sleep infinity"]
+    tty: true
+    stdin_open: true
+    profiles: ["debug"]
+    networks:
+      - monitoring
+```
+
+How to start (opt-in):
+
+```bash
+# start debug container (only with docker compose that supports profiles)
+docker compose -f monitor/docker-compose.yml --profile debug up -d monitor_debug
+
+# or start it directly (works with older docker-compose too)
+docker-compose -f monitor/docker-compose.yml up -d monitor_debug
+```
+
+Install useful tools inside the debug container (alpine example):
+
+```bash
+docker compose -f monitor/docker-compose.yml exec -T monitor_debug \
+  sh -c "apk add --no-cache curl jq netcat-openbsd openssl busybox-extras || true; sh"
+```
+
+Useful diagnostics to run inside `monitor_debug`:
+
+```bash
+# check tcp reachability to Logstash beats port
+nc -vz logstash 5044
+
+# call Logstash monitoring API
+curl -sS http://logstash:9600/_node/pipelines | jq .
+
+# list ES indices
+curl -sS http://elasticsearch:9200/_cat/indices?v
+
+# search for the automated smoke document
+curl -sS -H 'Content-Type: application/json' \
+  -XPOST 'http://elasticsearch:9200/transcendence-logs-*/_search' \
+  -d '{"query":{"match":{"message":"automated smoke"}},"size":5}' | jq .
+```
+
+Stop and remove the debug container when finished:
+
+```bash
+docker compose -f monitor/docker-compose.yml stop monitor_debug
+docker compose -f monitor/docker-compose.yml rm -f monitor_debug
+```
+
+Notes:
+- Use the `--profile debug` flag to keep the debug container opt-in (won't start in default `docker compose up`).
+- Alternatively, run a one-off ephemeral container on the `monitoring` network if don't want to change compose files:
+  ```bash
+  NETWORK=$(docker network ls --filter name=monitoring -q)
+  docker run --rm -it --network "$NETWORK" ubuntu:22.04 bash
+  ```
+
+
+### Run local smoke test 
+```bash
+./monitor/test-scripts/run_smoke.sh --generate-certs --restart --smoke --timeout 60 --yes
 ```

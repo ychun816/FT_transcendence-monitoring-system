@@ -67,7 +67,7 @@ docker-compose -f "$ROOT_COMPOSE" exec -T elasticsearch sh -c "curl -sS -XPOST '
 
 # Query Elasticsearch for documents that contain the exact message written to the test file
 # Retry loop: ES_RETRIES attempts (default 10). Set ES_RETRIES env var to override.
-ES_RETRIES_DEFAULT=30
+ES_RETRIES_DEFAULT=60
 ES_RETRIES=${ES_RETRIES:-$ES_RETRIES_DEFAULT}
 ES_SLEEP=${ES_SLEEP:-2}
 ES_RESP=""
