@@ -32,10 +32,11 @@ echo -e "${BOLD_LIGHT_BLUE}Wrote test file: $TESTFILE${RESET}"
 # This reduces race conditions where the test queries ES before Filebeat / Logstash
 # have completed the hand-off. Two timeouts control behavior and can be overridden
 # by environment variables:
-# - FILEBEAT_WAIT_SECONDS: how long (seconds) to wait for Filebeat->Logstash connection (default 30)
-# - ES_RETRIES: how many times to poll Elasticsearch for the document once connected (default 10)
+# - FILEBEAT_WAIT_SECONDS: how long (seconds) to wait for Filebeat->Logstash connection (default 60)
+# - ES_RETRIES: how many times to poll Elasticsearch for the document once connected (default 30)
+# - ES_SLEEP: how many seconds to sleep between ES retry attempts (default 2)
 
-FILEBEAT_WAIT_SECONDS=${FILEBEAT_WAIT_SECONDS:-30}
+FILEBEAT_WAIT_SECONDS=${FILEBEAT_WAIT_SECONDS:-60}
 echo -e "${BOLD_LIGHT_BLUE}Waiting up to ${FILEBEAT_WAIT_SECONDS}s for Filebeat -> Logstash connection...${RESET}"
 
 # Compose file used by this repo (monitor/docker-compose.yml from script root)
@@ -56,12 +57,13 @@ if [[ "$CONNECTED" -ne 1 ]]; then
 fi
 
 echo
-echo -e "${BOLD_ORANGE_BG}Elasticsearch search for message (retrying up to ${ES_RETRIES:-10} attempts)${RESET}"
+echo -e "${BOLD_ORANGE_BG}Elasticsearch search for message (retrying up to ${ES_RETRIES:-30} attempts, sleep between attempts configurable via ES_SLEEP)${RESET}"
 
 # Query Elasticsearch for documents that contain the exact message written to the test file
 # Retry loop: ES_RETRIES attempts (default 10). Set ES_RETRIES env var to override.
-ES_RETRIES_DEFAULT=10
+ES_RETRIES_DEFAULT=30
 ES_RETRIES=${ES_RETRIES:-$ES_RETRIES_DEFAULT}
+ES_SLEEP=${ES_SLEEP:-2}
 ES_RESP=""
 # Escape double-quotes in the message for safe embedding in the container curl command
 ESCAPED_MSG=$(printf '%s' "$MSG" | sed 's/"/\\"/g')
@@ -73,8 +75,8 @@ for i in $(seq 1 $ES_RETRIES); do
     echo "$ES_RESP"
     break
   fi
-  echo "Attempt $i/$ES_RETRIES: message not yet present in ES, sleeping 1s..."
-  sleep 1
+  echo "Attempt $i/$ES_RETRIES: message not yet present in ES, sleeping ${ES_SLEEP}s..."
+  sleep $ES_SLEEP
 done
 if [[ -z "$ES_RESP" || $(echo "$ES_RESP" | grep -c "$MSG" || true) -eq 0 ]]; then
   echo "Elasticsearch did not return the test message after $ES_RETRIES attempts. Last response:"
