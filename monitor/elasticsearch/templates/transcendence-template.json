@@ -1,0 +1,34 @@
+{
+  "index_patterns": ["transcendence-logs-*", "transcendence-smoke-test"],
+  "priority": 500,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.lifecycle.name": "transcendence-logs-policy",
+      "index.lifecycle.rollover_alias": "transcendence-logs-write"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "message": { "type": "text" },
+        "level": { "type": "keyword" },
+        "application": { "type": "keyword" },
+        "environment": { "type": "keyword" },
+        "ecs": { "properties": { "version": { "type": "keyword" } } },
+        "log": { "properties": { "logger": { "type": "keyword" }, "original": { "type": "text" } } }
+      },
+      "dynamic_templates": [
+        {
+          "strings_as_keyword": {
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        }
+      ]
+    }
+  }
+}

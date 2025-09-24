@@ -77,13 +77,33 @@ services:
       - monitoring
 
   # STEP 3) Logstash -> processes and transforms logs
-  # logstash:
-  #   image: docker.elastic.co/logstash/logstash:8.15.0
-  #   container_name: logstash
-  #   depends_on:
-  #     - elasticsearch
-  #   networks:
-  #     - monitoring
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.15.0
+    container_name: logstash
+    environment:
+      - LS_JAVA_OPTS=-Xms256m -Xmx256m
+    ports:
+      - "5000:5000" # HTTP input # expose Logstash’s HTTP input -> any HTTP client (curl, app, Postman) can POST JSON to http://localhost:5000
+      - "5044:5044" # TCP input (beats/tcp) # expose TCP input -> programs speaking plain newline-delimited JSON over TCP can send logs to Logstash at port 5044
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    networks:
+      - monitoring
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.15.0
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./logs/transcendence:/var/log/transcendence:ro
+    depends_on:
+      - logstash
+    networks:
+      - monitoring
 
 networks:
   monitoring:
