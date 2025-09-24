@@ -59,6 +59,12 @@ fi
 echo
 echo -e "${BOLD_ORANGE_BG}Elasticsearch search for message (retrying up to ${ES_RETRIES:-30} attempts, sleep between attempts configurable via ES_SLEEP)${RESET}"
 
+# Try to speed up visibility for freshly indexed docs in dev/test by requesting an index refresh
+# from within the elasticsearch container. This is safe for a local dev PoC and reduces flaky
+# failures where the document is indexed but not yet visible to search due to refresh intervals.
+echo -e "${BOLD_LIGHT_BLUE}Requesting Elasticsearch _refresh to improve visibility of recent docs...${RESET}"
+docker-compose -f "$ROOT_COMPOSE" exec -T elasticsearch sh -c "curl -sS -XPOST 'http://localhost:9200/_refresh' || true" || true
+
 # Query Elasticsearch for documents that contain the exact message written to the test file
 # Retry loop: ES_RETRIES attempts (default 10). Set ES_RETRIES env var to override.
 ES_RETRIES_DEFAULT=30
