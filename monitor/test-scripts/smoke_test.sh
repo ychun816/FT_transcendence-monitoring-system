@@ -76,7 +76,8 @@ ESCAPED_MSG=$(printf '%s' "$MSG" | sed 's/"/\\"/g')
 for i in $(seq 1 $ES_RETRIES); do
   # Run the query from inside the elasticsearch container to avoid host networking surprises
   ES_RESP=$(docker-compose -f "$ROOT_COMPOSE" exec -T elasticsearch sh -c "curl -sS -H 'Content-Type: application/json' -XPOST 'http://localhost:9200/_search' -d '{\"query\":{\"match\":{\"message\":\"$ESCAPED_MSG\"}},\"size\":5}'" || true)
-  if [[ -n "$ES_RESP" && $(echo "$ES_RESP" | grep -c "$MSG" || true) -gt 0 ]]; then
+  # Use fixed-string grep (-F) to avoid accidental regexp interpretation of the message
+  if [[ -n "$ES_RESP" && $(echo "$ES_RESP" | grep -F -c -- "$MSG" || true) -gt 0 ]]; then
     echo "Found document in Elasticsearch (attempt $i):"
     echo "$ES_RESP"
     break
