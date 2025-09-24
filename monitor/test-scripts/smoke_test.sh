@@ -6,6 +6,8 @@ BOLD_ORANGE_BG="\033[1;43m"
 RESET="\033[0m"
 ############################
 
+
+
 set -euo pipefail
 
 # Create a message string that includes the current UTC timestamp in ISO 8601 format
