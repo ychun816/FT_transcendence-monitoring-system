@@ -1,2 +1,5 @@
 yarn.lock
 node_modules
+
+# Local certs for monitoring stack (do not commit private keys)
+monitor/certs/

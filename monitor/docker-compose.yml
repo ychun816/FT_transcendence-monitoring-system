@@ -83,13 +83,21 @@ services:
     environment:
       - LS_JAVA_OPTS=-Xms256m -Xmx256m
     ports:
-      - "5000:5000" # HTTP input # expose Logstash’s HTTP input -> any HTTP client (curl, app, Postman) can POST JSON to http://localhost:5000
-      - "5044:5044" # TCP input (beats/tcp) # expose TCP input -> programs speaking plain newline-delimited JSON over TCP can send logs to Logstash at port 5044
+      # Original mappings (commented out for reference):
+      # - "5000:5000" # HTTP input -> exposed on host port 5000 (original)
+      # - "5044:5044" # Beats input -> exposed on host port 5044 (original)
+      - "127.0.0.1:15000:5000" # HTTP input remapped to host port 15000 (dev-only)
+      - "127.0.0.1:15044:5044" # Beats input remapped to host port 15044 (dev-only)
     depends_on:
       - elasticsearch
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
       - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+      # Mount the certs directory into Logstash (dev-only)
+      - ./certs:/usr/share/logstash/certs:ro
+      # Previously (individual mounts):
+      # - ./certs/logstash.crt:/usr/share/logstash/certs/logstash.crt:ro
+      # - ./certs/logstash.key:/usr/share/logstash/certs/logstash.key:ro
     networks:
       - monitoring
 
@@ -100,6 +108,12 @@ services:
     volumes:
       - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
       - ./logs/transcendence:/var/log/transcendence:ro
+      # Mount the certs directory into Filebeat (dev-only)
+      - ./certs:/usr/share/filebeat/certs:ro
+      # Previously (individual mounts):
+      # - ./certs/ca.crt:/usr/share/filebeat/certs/ca.crt:ro
+      # - ./certs/filebeat.crt:/usr/share/filebeat/certs/filebeat.crt:ro
+      # - ./certs/filebeat.key:/usr/share/filebeat/certs/filebeat.key:ro
     depends_on:
       - logstash
     networks:
