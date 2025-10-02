@@ -1497,3 +1497,14 @@ Notes:
 ```bash
 ./monitor/test-scripts/run_smoke.sh --generate-certs --restart --smoke --timeout 60 --yes
 ```
+
+### yarn commands
+```
+yarn install           # Download packages for current project
+yarn start:dev         # Run app
+yarn build             # Build app
+yarn test              # Run tests
+
+
+df -h [path/directory] #check storage
+```

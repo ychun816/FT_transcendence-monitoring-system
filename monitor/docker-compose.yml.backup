@@ -1,0 +1,220 @@
+version: '3.7'
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml
+      #- ./prometheus_config.yml:/etc/prometheus/prometheus_config.yml
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    depends_on:
+      - alertmanager
+    networks:
+      - monitoring
+
+  monitor_debug:
+    image: alpine:3.18
+    container_name: monitor_debug
+    command: ["sh", "-c", "sleep infinity"]
+    tty: true
+    stdin_open: true
+    profiles: ["debug"]
+    networks:
+      - monitoring
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+      - ./alert_manager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - monitoring
+
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    depends_on:
+      - alertmanager
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+      - ./alert_manager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      #- grafana-storage:/var/lib/grafana
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      #- grafana-storage:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
+
+  # STEP 1) Elasticsearch -> stores and indexes logs
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node      # Run as single node (good for development)
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m # Limit memory usage to 512MB
+      - xpack.security.enabled=false    # Disable security for simplicity
+    ports:
+      - "9200:9200"  # REST API port? 
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - monitoring
+
+  # STEP 2) Kibana -> web interface for viewing logs
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - monitoring
+
+  # STEP 3) Logstash -> processes and transforms logs
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.15.0
+    container_name: logstash
+    environment:
+      - LS_JAVA_OPTS=-Xms256m -Xmx256m
+    ports:
+      # Original mappings (commented out for reference):
+      # - "5000:5000" # HTTP input -> exposed on host port 5000 (original)
+      # - "5044:5044" # Beats input -> exposed on host port 5044 (original)
+      - "127.0.0.1:15000:5000" # HTTP input remapped to host port 15000 (dev-only)
+      - "127.0.0.1:15044:5044" # Beats input remapped to host port 15044 (dev-only)
+    depends_on:
+      - elasticsearch
+    healthcheck:   ###############
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9600/_node/pipelines || exit 1"]
+      interval: 10s
+      timeout: 5s # Maximum time to wait for the health check to succeed before marking it as failed.
+      retries: 10 # Number of consecutive failures required before the container is considered unhealthy.
+      start_period: 20s # Initial time to wait after container starts before starting health checks
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+      # Mount the certs directory into Logstash (dev-only)
+      - ./certs:/usr/share/logstash/certs:ro
+      # Previously (individual mounts):
+      # - ./certs/logstash.crt:/usr/share/logstash/certs/logstash.crt:ro
+      # - ./certs/logstash.key:/usr/share/logstash/certs/logstash.key:ro
+    networks:
+      - monitoring
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.15.0
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./logs/transcendence:/var/log/transcendence:ro
+      # Mount the certs directory into Filebeat (dev-only)
+      - ./certs:/usr/share/filebeat/certs:ro
+      # Previously (individual mounts):
+      # - ./certs/ca.crt:/usr/share/filebeat/certs/ca.crt:ro
+      # - ./certs/filebeat.crt:/usr/share/filebeat/certs/filebeat.crt:ro
+      # - ./certs/filebeat.key:/usr/share/filebeat/certs/filebeat.key:ro
+    depends_on:
+      logstash:
+        condition: service_healthy
+    # Ensures this service starts only after the 'logstash' service is healthy.
+    # "service_healthy" means it waits for logstash's healthcheck to pass.
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  elasticsearch_data:
+    driver: local
+
+
+#### QUICK NOTES #####
+
+#depends_on: #dependencies (start after...)
+
+#networks: 
+# 1 Defines which Docker networks the container belongs to
+# 2 All services on the monitoring network can communicate with each other using container names as hostnames
+# 3 Isolates traffic from other containers and the host unless ports are explicitly exposed
+
+#binding:
+# -Port binding: HOST_PORT:CONTAINER_PORT allows outside traffic to reach the container.
+# -Volume binding: HOST_PATH:CONTAINER_PATH allows host files to be accessed and modified by the container, or container data to persist outside the container.
+
+
+# environment: Configure container runtime variables.
+# volumes: Persist data or map configs.
+# ports: Expose container services to the host.
+# command: Customize container startup behavior.
+# depends_on: Define startup order dependencies.
+# networks: Control inter-service communication and isolation.
+# binding: Links host resources (ports or files) to container resources.
+
+# healthcheck:
+# The command used to test if the container is healthy.
+# - "CMD-SHELL" allows running a shell command.
+# - Here it tries to GET the URL http://127.0.0.1:9600/_node/pipelines using curl.
+# - If curl fails, the command exits with code 1, signaling the container is unhealthy.
+
+# condition: service_healthy -> fixed keyword! 
+
+
+
+#### TRYING FOR LOCAL DEBUG! REMOVE FOR CI/PROD
+  # monitor_debug:
+  #   image: alpine:3.18
+  #   container_name: monitor_debug
+  #   command: ["sh", "-c", "sleep infinity"]
+  #   tty: true
+  #   stdin_open: true
+  #   profiles: ["debug"]
+  #   networks:
+  #     - monitoring
+####
+
+
+######################
