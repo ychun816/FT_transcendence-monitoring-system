@@ -1,0 +1,28 @@
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/log/transcendence/*.log
+  json.keys_under_root: true
+  json.add_error_key: true
+
+processors:
+  - add_fields:
+      target: ''
+      fields:
+        environment: development
+        application: transcendence
+
+output.logstash:
+  # Use Docker service name so Filebeat connects over the compose network.
+  # This is the common approach for containerized deployments and keeps
+  # traffic internal to Docker: Filebeat -> logstash:5044.
+  hosts: ["logstash:5044"]
+  ssl:
+    certificate_authorities: ["/usr/share/filebeat/certs/ca.crt"]
+    # optional mutual TLS (uncomment if you created client certs):
+    # certificate: "/usr/share/filebeat/certs/filebeat.crt"
+    # key: "/usr/share/filebeat/certs/filebeat.key"
+
+logging.level: info
+logging.to_files: false
