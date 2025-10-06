@@ -1508,3 +1508,23 @@ yarn test              # Run tests
 
 df -h [path/directory] #check storage
 ```
+
+### connecting ports
+
+- Elasticsearch :	9200	(Log storage & indexing)
+- Logstash	:	5044	(Log processing & transformation)
+- Kibana: http://localhost:5601 (Log analysis & visualization)
+- Grafana: http://localhost:3000 (Metrics dashboards)
+- Prometheus: http://localhost:9090 (Metrics collection)
+- Alertmanager: http://localhost:9093 (Alert management)
+
+### structure checks
+
+- ELK Stack: infrastructure for log management
+- Prometheus/Grafana: monitoring system
+- Security: TLS certificates configure
+- Data Retention: Configured 
+- Alerting: Alertmanager ready for proactive monitoring
+- Dashboards: Kibana + Grafana for visualization
+
+
