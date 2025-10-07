@@ -5,3 +5,75 @@
 
  ✓ Starting...
  ✓ Ready in 1186ms
+[2025-10-07 16:11:08] [SYSTEM] [INFO] Starting frontend service
+   ▲ Next.js 15.3.4
+   - Local:        http://localhost:3000
+   - Network:      http://10.11.108.21:3000
+
+ ✓ Starting...
+ ✓ Ready in 1387ms
+[2025-10-07 16:16:55] [SYSTEM] [INFO] Starting frontend service
+   ▲ Next.js 15.3.4
+   - Local:        http://localhost:3002
+   - Network:      http://10.11.108.21:3002
+
+ ✓ Starting...
+ ✓ Ready in 1018ms
+[2025-10-07 16:36:54] [SYSTEM] [INFO] Starting frontend service
+   ▲ Next.js 15.3.4
+   - Local:        http://localhost:3003
+   - Network:      http://10.11.108.21:3003
+
+ ✓ Starting...
+ ✓ Ready in 1004ms
+[?25h
+[?25h
+[?25h
+[2025-10-07 16:44:32] [SYSTEM] [INFO] Starting frontend service
+   ▲ Next.js 15.3.4
+   - Local:        http://localhost:3000
+   - Network:      http://10.11.108.21:3000
+
+ ✓ Starting...
+ ✓ Ready in 1173ms
+[?25h
+[2025-10-07 16:51:39] [SYSTEM] [INFO] Starting frontend service
+   ▲ Next.js 15.3.4
+   - Local:        http://localhost:3000
+   - Network:      http://10.11.108.21:3000
+
+ ✓ Starting...
+ ✓ Ready in 1028ms
+[?25h
+[2025-10-07 16:56:30] [SYSTEM] [INFO] Starting frontend service
+   ▲ Next.js 15.3.4
+   - Local:        http://localhost:3000
+   - Network:      http://10.11.108.21:3000
+
+ ✓ Starting...
+ ✓ Ready in 1122ms
+[?25h
+[2025-10-07 16:59:35] [SYSTEM] [INFO] Starting frontend service
+   ▲ Next.js 15.3.4
+   - Local:        http://localhost:3000
+   - Network:      http://10.11.108.21:3000
+
+ ✓ Starting...
+ ✓ Ready in 1061ms
+[?25h
+[2025-10-07 17:00:59] [SYSTEM] [INFO] Starting frontend service
+   ▲ Next.js 15.3.4
+   - Local:        http://localhost:3000
+   - Network:      http://10.11.108.21:3000
+
+ ✓ Starting...
+ ✓ Ready in 1075ms
+[?25h
+[2025-10-07 17:01:34] [SYSTEM] [INFO] Starting frontend service
+   ▲ Next.js 15.3.4
+   - Local:        http://localhost:3000
+   - Network:      http://10.11.108.21:3000
+
+ ✓ Starting...
+ ✓ Ready in 1058ms
+[?25h

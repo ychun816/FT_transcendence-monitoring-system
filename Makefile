@@ -7,7 +7,7 @@ all: start
 # **************************************************************************** #
 
 start:
-	@echo "🚀 Starting Transcendence..."
+	@echo "$(GREEN_BBG)STARTING TRANSCENDENCE...$(COLOR_RESET)"
 	@mkdir -p monitor/logs/transcendence/backend monitor/logs/transcendence/frontend
 	@cd monitor && docker-compose up -d
 	@echo "[$(shell date '+%Y-%m-%d %H:%M:%S')] [SYSTEM] [INFO] Starting backend service" >> monitor/logs/transcendence/backend/backend.log
@@ -19,36 +19,37 @@ start:
 	@echo "🎮 Game: http://localhost:3000"
 	@echo "🚀 API:  http://localhost:4000"
 	@echo "📝 Modern logging structure:"
-	@echo "   Backend logs:       monitor/logs/transcendence/backend/"
-	@echo "   Frontend logs:      monitor/logs/transcendence/frontend/"
-	@echo "   Error logs separate: *-error.log files"
-	@echo "   View in Kibana:     http://localhost:5601"
+	@echo "- Kibana:         http://localhost:5601"
+	@echo "- Backend logs:   monitor/logs/transcendence/backend/"
+	@echo "- Frontend logs:  monitor/logs/transcendence/frontend/"
 
 
 status:
-	@echo "📊 Status:"
-	@echo "Backend:" && pgrep -f "nest start" >/dev/null && echo "  ✅ Running" || echo "  ❌ Stopped"
-	@echo "Frontend:" && pgrep -f "next dev" >/dev/null && echo "  ✅ Running" || echo "  ❌ Stopped"
-	@echo "Monitoring:"
-	@cd monitor && docker-compose ps --services --filter "status=running" | wc -l | xargs echo "  Running containers:"
-	@cd monitor && docker-compose ps | grep Up | awk '{print "    " $$1}'
+	@echo "$(ORANGE_BBG)STATUS$(COLOR_RESET)"
+	@echo "Backend:" && netstat -tulpn 2>/dev/null | grep -q ":4000.*LISTEN" && echo "  ✅ Running" || echo "  ❌ Stopped"
+	@echo "Frontend:" && netstat -tulpn 2>/dev/null | grep -q ":3000.*LISTEN" && echo "  ✅ Running" || echo "  ❌ Stopped"
+	@echo "$(ORANGE_BBG)MONITORING$(COLOR_RESET)"
+	@cd monitor && docker-compose ps --services --filter "status=running" | wc -l | xargs echo "Running containers:"
+	@cd monitor && docker-compose ps | grep Up | awk '{print "- " $$1}' || echo "No containers running"
+
+docker-status:
+	@echo "$(ORANGE_BBG)DOCKER STATUS$(COLOR_RESET)"
+	@docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || echo "No Docker containers running"
 
 # **************************************************************************** #
 #                                     STOP & CLEAN                             #
 # **************************************************************************** #
 
 stop:
-	@echo "🛑 Stopping everything..."
-	@pkill -9 -f "nest start" 2>/dev/null || true
-	@pkill -9 -f "next dev" 2>/dev/null || true
-	@cd monitor && docker-compose down
-	@echo "✅ Everything stopped!"
+	@echo "$(REDB)STOPPING EVERYTHING...$(COLOR_RESET)"
+	-@killall node 2>/dev/null || true
+	-@docker stop $$(docker ps -q) 2>/dev/null || true
+	@echo "$(PINKB)✅ Everything stopped!$(COLOR_RESET)"
 
 clean:
-	@echo "🧹 Cleaning everything..."
+	@echo "$(BLUEB)Cleaning everything...$(COLOR_RESET)"
 	@make stop
-	@./cleanup.sh
-	@echo "✅ Clean complete!"
+	@echo "$(BABEBLUEB)🧹 Clean complete!$(ROSEB)"
 
 # **************************************************************************** #
 #                                       LOGS                                   #
@@ -85,7 +86,7 @@ kibana: ## Open Kibana to view logs in ELK stack
 # 	@tail -f monitor/logs/transcendence/backend/backend.log monitor/logs/transcendence/frontend/frontend.log 2>/dev/null
 
 
-.PHONY: all start stop clean status logs logs-backend logs-frontend logs-errors logs-live kibana #help
+.PHONY: all start stop clean status docker-status logs logs-backend logs-frontend logs-errors logs-live kibana #help
 
 
 help: ## Show available commands
