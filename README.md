@@ -3,6 +3,8 @@
 - **Team:** [ft_transcendence](https://github.com/HADMARINE/ft_transcendence)
 - **Monitoring Learning notes:** [FT_transcendence-monitoring-system/tree/main/monitor](https://github.com/ychun816/FT_transcendence-monitoring-system/tree/main/monitor)
 
+---
+
 <p align="center">
   <img src="https://img.shields.io/badge/Elasticsearch-Learned-FFD4B2?style=flat&logo=elasticsearch&logoColor=white" alt="Elasticsearch"/> <!-- pastel orange -->
   <img src="https://img.shields.io/badge/Logstash-Learned-BFEFFF?style=flat&logo=logstash&logoColor=white" alt="Logstash"/> <!-- pastel blue -->
