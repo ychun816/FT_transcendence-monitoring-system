@@ -2,12 +2,17 @@
 # 🔍 Infrastructure Monitoring System
 
 <p align="center">
-  <img src="https://img.shields.io/badge/ELK_Stack-Implemented-FFD4B2?style=flat&logo=elastic&logoColor=white" alt="ELK Stack"/> <!-- pastel orange -->
+  <img src="https://img.shields.io/badge/Elasticsearch-Learned-FFD4B2?style=flat&logo=elasticsearch&logoColor=white" alt="Elasticsearch"/> <!-- pastel orange -->
+  <img src="https://img.shields.io/badge/Logstash-Learned-BFEFFF?style=flat&logo=logstash&logoColor=white" alt="Logstash"/> <!-- pastel blue -->
+  <img src="https://img.shields.io/badge/Kibana-Learned-FFC4D6?style=flat&logo=kibana&logoColor=white" alt="Kibana"/> <!-- pastel pink -->  
   <img src="https://img.shields.io/badge/Prometheus-Implemented-BFEFFF?style=flat&logo=prometheus&logoColor=white" alt="Prometheus"/> <!-- pastel blue -->
   <img src="https://img.shields.io/badge/Grafana-Implemented-FFC4D6?style=flat&logo=grafana&logoColor=white" alt="Grafana"/> <!-- pastel pink -->
   <img src="https://img.shields.io/badge/Docker-Implemented-C5A3E8?style=flat&logo=docker&logoColor=white" alt="Docker"/> <!-- pastel purple -->
+  <img src="https://img.shields.io/badge/Docker_Compose-Learned-D4F4DD?style=flat&logo=docker&logoColor=white" alt="Docker Compose"/> <!-- pastel green -->
   <img src="https://img.shields.io/badge/Monitoring-Advanced-FFF1A8?style=flat&logoColor=white" alt="Monitoring"/> <!-- pastel yellow -->
+
 </p>
+
 
 ---
 
@@ -346,15 +351,6 @@ rate(node_network_receive_bytes_total[5m])
 ---
 
 ## Skills Developed
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Elasticsearch-Learned-FFD4B2?style=flat&logo=elasticsearch&logoColor=white" alt="Elasticsearch"/> <!-- pastel orange -->
-  <img src="https://img.shields.io/badge/Logstash-Learned-BFEFFF?style=flat&logo=logstash&logoColor=white" alt="Logstash"/> <!-- pastel blue -->
-  <img src="https://img.shields.io/badge/Kibana-Learned-FFC4D6?style=flat&logo=kibana&logoColor=white" alt="Kibana"/> <!-- pastel pink -->
-  <img src="https://img.shields.io/badge/Prometheus-Learned-C5A3E8?style=flat&logo=prometheus&logoColor=white" alt="Prometheus"/> <!-- pastel purple -->
-  <img src="https://img.shields.io/badge/Grafana-Learned-FFF1A8?style=flat&logo=grafana&logoColor=white" alt="Grafana"/> <!-- pastel yellow -->
-  <img src="https://img.shields.io/badge/Docker_Compose-Learned-D4F4DD?style=flat&logo=docker&logoColor=white" alt="Docker Compose"/> <!-- pastel green -->
-</p>
 
 ### Technical Skills
 
