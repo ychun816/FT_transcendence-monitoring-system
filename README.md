@@ -1,5 +1,7 @@
-# FT_transcendence
-# 🔍 Infrastructure Monitoring System
+# 🔍 FT_transcendence - Infrastructure Monitoring System
+
+- Team: (ft_transcendence)[https://github.com/HADMARINE/ft_transcendence]
+- Monitoring Learning notes: (/FT_transcendence-monitoring-system/tree/main/monitor)[https://github.com/ychun816/FT_transcendence-monitoring-system/tree/main/monitor]
 
 <p align="center">
   <img src="https://img.shields.io/badge/Elasticsearch-Learned-FFD4B2?style=flat&logo=elasticsearch&logoColor=white" alt="Elasticsearch"/> <!-- pastel orange -->
